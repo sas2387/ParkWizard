@@ -6,6 +6,7 @@ from requests_aws4auth import AWS4Auth
 from django.views.decorators.http import require_GET, require_POST
 import json
 from django.conf import settings
+import esindex
 
 #everything aws about this project
 AWS_CONFIG = None
@@ -32,12 +33,14 @@ ES = Elasticsearch(hosts=[{'host': AWS_CONFIG["es_node"], 'port': 443}],
                    verify_certs=True,
                    connection_class=RequestsHttpConnection)
 
-
+@require_GET
 def addparking(request):
     """
-        Gain Geolocation data of Parking Spot and add to elasticsearch
+        Allow users to report parking location
     """
-    return HttpResponse("Hello World", "text/plain")
+    # create a parking index if does not exists already
+    esindex.create_parking_index(ES)
+    return HttpResponse("Hello World", content_type="application/json")
 
 
 @require_GET
@@ -45,4 +48,4 @@ def getparking(request):
     """
         Get available parking locations
     """
-    return HttpResponse("Hello World", "text/plain")
+    return HttpResponse("Hello World", content_type="application/json")
