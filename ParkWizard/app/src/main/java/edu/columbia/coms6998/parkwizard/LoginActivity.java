@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -55,12 +56,6 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         super.startActivity(intent);
         SignInButton signInButton = (SignInButton) findViewById(R.id.sign_in_button);
         signInButton.setSize(SignInButton.SIZE_WIDE);
-        signInButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(TAG,"click");
-            }
-        });
     }
 
     public void signIn(View v) {
@@ -118,13 +113,15 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 //handle backend response
                 try {
                     JSONObject jsonObject = new JSONObject(response);
-                    boolean login = jsonObject.getBoolean("successs");
+                    boolean login = jsonObject.getBoolean("success");
 
                     if (login) {
-                        Intent intent = new Intent()
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        startActivity(intent);
                         // move to new screen
                     } else {
                         // same activity
+                        Toast.makeText(LoginActivity.this, "Sign In Failed" , Toast.LENGTH_SHORT);
                     }
                 } catch (JSONException ex) {
                     ex.printStackTrace();
