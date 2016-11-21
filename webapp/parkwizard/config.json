@@ -1,0 +1,8 @@
+{
+    "aws":{
+        "es_node":"search-parkwizard-stput3mwak4tq4g7n6s5fuht6i.us-east-1.es.amazonaws.com",
+        "access_key":"",
+        "secret_key":"",
+        "region":""
+    }
+}
