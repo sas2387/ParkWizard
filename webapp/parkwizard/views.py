@@ -47,17 +47,26 @@ def addparking(request):
     """
     # create a parking index if does not exists already
     try:
-        name = request.POST['name']
+        user = request.POST['id']
         location = {
             "lat": request.POST["lat"],
             "lon": request.POST["lon"]
         }
-        spots = request.POST['spots']
-        esindex.add_parking(ES, name, location, spots)
+        parking = {
+            'name': request.POST['name'],
+            'location': location,
+            'spots': request.POST['spots'],
+            'available': request.POST['spots']
+        }
+        esindex.add_parking(ES, user, parking)
+
     except KeyError:
-        print "KeyError"
-        return HttpResponse(json.dumps("KeyError for adding parking location"),
+        return HttpResponse(json.dumps("Invalid values for parking location"),
                             status=500)
+
+    except TransportError as error:
+        return HttpResponse(json.dumps(error.error), status=500, content_type="application/json")
+
     return HttpResponse(json.dumps("Parking added sucessfully"), content_type="application/json")
 
 
@@ -67,16 +76,22 @@ def getparking(request):
         Get available parking locations
     """
     try:
+        user = request.GET["id"]
         location = {
             "lat": request.GET["lat"],
             "lon": request.GET["lon"]
         }
-        esindex.search_parking(ES, location)
+        result = esindex.search_parking(ES, user, location, "500m")
+        return HttpResponse(json.dumps(result),
+                            content_type="application/json")
+
     except KeyError:
         return HttpResponse(json.dumps("Please provide a valid location"),
                             content_type="application/json", status=500)
 
-    return HttpResponse(json.dumps("Parking list here"), content_type="application/json")
+    except TransportError:
+        return HttpResponse(json.dumps("Error in searching parking locations"),
+                            content_type="application/json", status=500)
 
 
 @require_POST
@@ -93,6 +108,7 @@ def adduser(request):
             "score": 100
         }
         esindex.add_user(ES, user_id, record)
+        return HttpResponse(json.dumps("User added successfully"), content_type="application/json")
     except KeyError:
         return HttpResponse(json.dumps("Please provide valid user details"),
                             status=500, content_type="application/json")
@@ -103,6 +119,3 @@ def adduser(request):
             message = "User already exists"
         return HttpResponse(json.dumps(message), status=500,
                             content_type="application/json")
-
-    return HttpResponse(json.dumps("User added successfully"), content_type="application/json")
-
