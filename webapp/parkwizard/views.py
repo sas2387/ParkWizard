@@ -46,16 +46,31 @@ def addparking(request):
         Allow users to report parking location
     """
     # create a parking index if does not exists already
-    name = request.POST.get('name')
-    location = request.POST.get('location')
-    spots = request.POST.get('spots')
-    esindex.add_parking(ES, name, location, spots)
-    return HttpResponse("Hello World", content_type="application/json")
-
+    try:
+        name = request.POST['name']
+        location = {
+            "lat": request.POST["lat"],
+            "lon": request.POST["lon"]
+        }
+        spots = request.POST['spots']
+        esindex.add_parking(ES, name, location, spots)
+    except KeyError:
+        print "KeyError"
+        return HttpResponse(status=500)
+    return HttpResponse(json.dumps("Hello World"), content_type="application/json")
 
 @require_GET
 def getparking(request):
     """
         Get available parking locations
     """
-    return HttpResponse("Hello World", content_type="application/json")
+    try:
+        location = {
+            "lat": request.GET["lat"],
+            "lon": request.GET["lon"]
+        }
+        esindex.search_parking(ES, location)
+    except KeyError:
+        return HttpResponse(json.dumps("Please provide a valid location"), status=500)
+
+    return HttpResponse(json.dumps("Parking list here"), content_type="application/json")
