@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "494925756460",
+    "project_id": "park-wizard"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:494925756460:android:f4369c47ac80dbfd",
+        "android_client_info": {
+          "package_name": "edu.columbia.coms6998.parkwizard"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "494925756460-0e0lf2bms45c0jt826gqg8v4smn21a5f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.columbia.coms6998.parkwizard",
+            "certificate_hash": "446615E2C3D310BA8BC22E2FD70D555D510CB101"
+          }
+        },
+        {
+          "client_id": "494925756460-44fbos95av1vdbsdj8i7tp7o51s5j4j4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwt3NfyKl3cUN9FOtbIzt4QAypk9jJlQ8"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
