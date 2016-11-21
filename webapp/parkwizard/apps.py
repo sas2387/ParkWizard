@@ -3,5 +3,5 @@ from __future__ import unicode_literals
 from django.apps import AppConfig
 
 
-class ParkwizardConfig(AppConfig):
-    name = 'ParkWizard'
+class parkwizardConfig(AppConfig):
+    name = 'parkwizard'
