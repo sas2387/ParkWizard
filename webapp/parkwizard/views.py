@@ -56,8 +56,10 @@ def addparking(request):
         esindex.add_parking(ES, name, location, spots)
     except KeyError:
         print "KeyError"
-        return HttpResponse(status=500)
+        return HttpResponse(json_dumps("KeyError for adding parking location"),
+                            status=500)
     return HttpResponse(json.dumps("Hello World"), content_type="application/json")
+
 
 @require_GET
 def getparking(request):
@@ -71,6 +73,26 @@ def getparking(request):
         }
         esindex.search_parking(ES, location)
     except KeyError:
-        return HttpResponse(json.dumps("Please provide a valid location"), status=500)
+        return HttpResponse(json.dumps("Please provide a valid location"),
+                            content_type="application/json", status=500)
 
     return HttpResponse(json.dumps("Parking list here"), content_type="application/json")
+
+
+@require_POST
+@csrf_exempt
+def adduser(request):
+    """
+        New User registers to system
+    """
+    try:
+        user_id = request.POST["id"]
+        name = request.POST["name"]
+        record = {
+            "name": name,
+            "score": 100
+        }
+        esindex.add_user(ES, user_id, record)
+    except KeyError:
+        return HttpResponse(json.dumps("Please provide valid user details"),
+                            status=500, content_type="application/json")

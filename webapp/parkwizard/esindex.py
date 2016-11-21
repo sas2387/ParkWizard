@@ -63,16 +63,23 @@ def setup(es):
     create_parking_index(es)
     create_user_index(es)
 
+def add_user(es, user_id, record):
+    """
+        Create new user in users index
+    """
+    es.create(index="users", doc_type="user", id=user_id, body=record)
 
 def add_parking(es, name, location, spots):
     """
         Confirm and add a parking spot
     """
     print name, location, spots
-    pass
 
 
 def search_parking(es, location):
+    """
+        get parking search in 500m radius
+    """
     print location
 
 """
