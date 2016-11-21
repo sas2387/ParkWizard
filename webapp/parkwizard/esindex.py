@@ -65,22 +65,14 @@ def setup(es):
 
 
 def add_user(es, user_id, record):
-    """
+    """s
         Create new user in users index
     """
     es.create(index="users", doc_type="user", id=user_id, body=record)
 
-
-def add_parking(es, user_id, parking):
+def __search_parking(es, location, radius):
     """
-        Confirm and add a parking spot
-    """
-    es.create(index="parkinglocations", doc_type='parking', body=parking)
-
-
-def search_parking(es, user, location, radius):
-    """
-        get parking search in 500m radius
+        Get elasticsearch result
     """
     query = {
         "filtered":{
@@ -101,11 +93,39 @@ def search_parking(es, user, location, radius):
                                     'hits.hits._source.name',
                                     'hits.hits._source.available'],
                        body={"query": query})
+    
+    try:
+        results = results['hits']['hits']
+    except KeyError:
+        pass
+    return results
+
+
+def add_parking(es, user_id, parking):
+    """
+        Confirm and add a parking spot
+    """
+    existing = __search_parking(es, parking['location'], "50m")
+    print 'AFTER'
+
+    # ignore if parking reported in 50m radius previously
+    if len(existing) > 0:
+        return False
+    es.create(index="parkinglocations", doc_type='parking', body=parking)
+    return True
+
+
+def search_parking(es, user, location, radius):
+    """
+        get parking search in radius
+    """
     parkings = list()
-    if len(results['hits']['hits']) == 0:
+    results = __search_parking(es, location, radius)
+    if len(results) < 1:
         return parkings
 
-    for result in results['hits']['hits']:
+    # parse results
+    for result in results:
         record = dict()
         record['name'] = result['_source']['name']
         record['location'] = result['_source']['location']

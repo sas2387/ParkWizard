@@ -58,7 +58,12 @@ def addparking(request):
             'spots': request.POST['spots'],
             'available': request.POST['spots']
         }
-        esindex.add_parking(ES, user, parking)
+        if esindex.add_parking(ES, user, parking) is True:
+            return HttpResponse(json.dumps("Parking Reported Successfully"),
+                content_type="application/json")
+        else:
+            return HttpResponse(json.dumps("Parking already exists"),
+                                content_type="application/json")
 
     except KeyError:
         return HttpResponse(json.dumps("Invalid values for parking location"),
@@ -67,11 +72,9 @@ def addparking(request):
     except TransportError as error:
         return HttpResponse(json.dumps(error.error), status=500, content_type="application/json")
 
-    return HttpResponse(json.dumps("Parking added sucessfully"), content_type="application/json")
-
 
 @require_GET
-def getparking(request):
+def searchparking(request):
     """
         Get available parking locations
     """
