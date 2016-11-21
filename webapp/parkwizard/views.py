@@ -3,7 +3,7 @@
 """
 import os
 import json
-from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch import Elasticsearch, RequestsHttpConnection, TransportError
 from requests_aws4auth import AWS4Auth
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -56,9 +56,9 @@ def addparking(request):
         esindex.add_parking(ES, name, location, spots)
     except KeyError:
         print "KeyError"
-        return HttpResponse(json_dumps("KeyError for adding parking location"),
+        return HttpResponse(json.dumps("KeyError for adding parking location"),
                             status=500)
-    return HttpResponse(json.dumps("Hello World"), content_type="application/json")
+    return HttpResponse(json.dumps("Parking added sucessfully"), content_type="application/json")
 
 
 @require_GET
@@ -96,3 +96,13 @@ def adduser(request):
     except KeyError:
         return HttpResponse(json.dumps("Please provide valid user details"),
                             status=500, content_type="application/json")
+
+    except (TransportError, Exception) as error:
+        message = "Unkown error in adding user"
+        if error.status_code == 409:
+            message = "User already exists"
+        return HttpResponse(json.dumps(message), status=500,
+                            content_type="application/json")
+
+    return HttpResponse(json.dumps("User added successfully"), content_type="application/json")
+
