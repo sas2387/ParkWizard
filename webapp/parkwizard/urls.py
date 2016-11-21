@@ -8,4 +8,5 @@ from . import views
 urlpatterns = [
     url(r'^addparking$', views.addparking, name='addparking'),
     url(r'^getparking$', views.getparking, name='getparking'),
+    url(r'^adduser$', views.adduser, name='adduser'),
 ]
