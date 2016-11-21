@@ -29,6 +29,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     private static final String TAG = "LoginActivity";
     private static final int RC_SIGN_IN = 9001;
     GoogleApiClient mGoogleApiClient;
+    SignInButton signInButton;
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -49,13 +50,13 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
-    }
-
-    @Override
-    public void startActivity(Intent intent) {
-        super.startActivity(intent);
-        SignInButton signInButton = (SignInButton) findViewById(R.id.sign_in_button);
-        signInButton.setSize(SignInButton.SIZE_WIDE);
+        signInButton = (SignInButton) findViewById(R.id.sign_in_button);
+        signInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                signIn(null);
+            }
+        });
     }
 
     public void signIn(View v) {
