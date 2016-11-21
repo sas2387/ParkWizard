@@ -115,7 +115,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                     boolean login = jsonObject.getBoolean("successs");
 
                     if (login) {
-                        Intent intent = new Intent()
+                        Intent intent = new Intent();
                         // move to new screen
                     } else {
                         // same activity
