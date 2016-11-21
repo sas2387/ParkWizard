@@ -1,5 +1,6 @@
 import os
 from django.shortcuts import render
+from django.http import HttpResponse
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from django.views.decorators.http import require_GET, require_POST
@@ -20,10 +21,28 @@ def load_config(filename):
     return config["aws"]
 
 AWS_CONFIG = load_config(CONFIG_FILE)
+AWS_AUTH = AWS4Auth(AWS_CONFIG['access_key'], AWS_CONFIG['secret_key'],
+                    AWS_CONFIG["region"], AWS_CONFIG["service"])
 
-# Create your views here.
+
+# Global Elasticsearch object
+ES = Elasticsearch(hosts=[{'host': AWS_CONFIG["es_node"], 'port': 443}],
+                   http_auth=AWS_AUTH,
+                   use_ssl=True,
+                   verify_certs=True,
+                   connection_class=RequestsHttpConnection)
+
+
 def addparking(request):
     """
         Gain Geolocation data of Parking Spot and add to elasticsearch
+    """
+    return HttpResponse("Hello World", "text/plain")
+
+
+@require_GET
+def getparking(request):
+    """
+        Get available parking locations
     """
     return HttpResponse("Hello World", "text/plain")

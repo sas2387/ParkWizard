@@ -1,3 +1,4 @@
 /.idea/
-.pyc
-.sqlite3
+*.pyc
+*.sqlite3
+parkwizard/config.json
