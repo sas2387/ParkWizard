@@ -119,7 +119,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 //handle backend response
 
             }
-        }
+        }.execute();
 
     }
 
