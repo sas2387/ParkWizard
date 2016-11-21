@@ -30,11 +30,27 @@ def create_parking_index(es):
     # Ignore if index already exists
     es.indices.create(index='parkinglocations', ignore=400, body=mappings)
 
+
+def setup(es):
+    """
+        Setup parking indices if does not exists already
+    """
+    create_parking_index(es)
+
+
+def add_parking(es, name, location, spots):
+    """
+        Confirm and add a parking spot
+    """
+    print name, location, spots
+    pass
+
+
 """
     BEWARE: This will nuke your data completely
 """
-def __delete_index(es,indices):
+def __delete_indices(es,indices):
     """
-        Helper to delete
+        Helper to delete indices found in list
     """
     es.indices.delete(index=indices, ignore=[404])

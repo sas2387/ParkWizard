@@ -1,16 +1,19 @@
+"""
+    Application logic for parkwizard
+"""
 import os
-from django.shortcuts import render
-from django.http import HttpResponse
+import json
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
+from django.shortcuts import render
+from django.http import HttpResponse
 from django.views.decorators.http import require_GET, require_POST
-import json
+from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-import esindex
+from . import esindex
 
 #everything aws about this project
-AWS_CONFIG = None
-CONFIG_FILE = os.path.join(settings.BASE_DIR, "parkwizard","config.json")
+CONFIG_FILE = os.path.join(settings.BASE_DIR, "parkwizard", "config.json")
 
 def load_config(filename):
     """
@@ -33,13 +36,20 @@ ES = Elasticsearch(hosts=[{'host': AWS_CONFIG["es_node"], 'port': 443}],
                    verify_certs=True,
                    connection_class=RequestsHttpConnection)
 
-@require_GET
+#Setup elasticsearch indices on loading this module
+esindex.setup(ES)
+
+@require_POST
+@csrf_exempt
 def addparking(request):
     """
         Allow users to report parking location
     """
     # create a parking index if does not exists already
-    esindex.create_parking_index(ES)
+    name = request.POST.get('name')
+    location = request.POST.get('location')
+    spots = request.POST.get('spots')
+    esindex.add_parking(ES, name, location, spots)
     return HttpResponse("Hello World", content_type="application/json")
 
 
