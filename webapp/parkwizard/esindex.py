@@ -1,6 +1,8 @@
 """
     set up elasticsearch indices
 """
+from elasticsearch import TransportError
+
 def create_parking_index(es):
     """
         create mapping of data
@@ -68,25 +70,66 @@ def add_user(es, user_id, record):
     """s
         Create new user in users index
     """
-    message = {"status": True}
-    _es_response = es.create(index="users", doc_type="user",
+    response = {"success": True}
+    try:
+        _es_response = es.create(index="users", doc_type="user",
                              id=user_id, body=record)
+    except TransportError as error:
+        if error.status_code == 409:
+            """
+                user already exists
+            """
+            score = getscore(es, user_id)
+            if score['success'] is False:
+                response['success'] = False
+                response['message'] = "Error in confirmation"
+            else:
+                response['user'] = {
+                    "id": user_id,
+                    "name": record['name'],
+                    "score": score['score']
+                }
+            return response
     
     """
         user created successfully
     """
     if _es_response['created'] is True:
-        message['id'] = _es_response['_id']
-        pass
-    return message
+        score = getscore(es, user_id)
+        if score["success"] is False:
+            response["status"] = False
+            response["message"] = "Error in confirmation"
+        else:
+            response['user'] = {
+                "id": user_id,
+                "name": record['name'],
+                "score": score['score']}
+
+    return response
 
 
-def getuser(es, user_id):
+def getscore(es, user_id):
     """
         search user_id profile data
     """
-    return ""
+    response = {"success": True}
+    query = {
+        "query": {
+            "ids":{
+                "values": [user_id]
+            }
+        }
+    }
+    result = es.search(index="users", size=1,
+                   filter_path=['hits.hits._source.score'],
+                   body={"query": query})
 
+    result = result['hits']['hits']
+    if len(result) < 1:
+        response["success"] = False
+    else:
+        response["score"] = int(result[0]['_source']['score'])
+    return response
 
 def __search_parking(es, location, radius):
     """

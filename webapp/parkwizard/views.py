@@ -114,28 +114,26 @@ def adduser(request):
             "name": name,
             "score": 100
         }
-        esindex.add_user(ES, user_id, record)
+        message = esindex.add_user(ES, user_id, record)
         return HttpResponse(json.dumps(message),
                             content_type="application/json")
 
-    except (KeyError, TransportError, Exception) as error:
-        status = 200
-        if error.status_code != 409:
-            message["success"] = False
-            status = 500
+    except (KeyError, Exception):
+        message["success"] = False
+        status = 500
         return HttpResponse(json.dumps(message), status=status,
                             content_type="application/json")
 
 @require_GET
-def getuser(request):
+def getscore(request):
     """
         get user profile data
     """
     message = {"success": True}
     try:
         user_id = request.GET['id']
-        message['user'] = esindex.getuser(ES, user_id)
-        return HttpResponse(json.dumps(message), status=200,
+        score = esindex.getscore(ES, user_id)
+        return HttpResponse(json.dumps(score), status=200,
                             content_type="application/json")
 
     except (KeyError, ValueError, TransportError):
