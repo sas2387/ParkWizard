@@ -25,7 +25,7 @@ SECRET_KEY = '_jpd(k)$#bu*b-^amv5)2cnm^a8av9lm@mhy45ph*r@gn9#&mr'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition

@@ -5,7 +5,6 @@ import os
 import json
 from elasticsearch import Elasticsearch, RequestsHttpConnection, TransportError
 from requests_aws4auth import AWS4Auth
-from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -46,6 +45,7 @@ def addparking(request):
         Allow users to report parking location
     """
     # create a parking index if does not exists already
+    message = {"success": True}
     try:
         user = request.POST['id']
         location = {
@@ -58,15 +58,18 @@ def addparking(request):
             'spots': request.POST['spots'],
             'available': request.POST['spots']
         }
-        if esindex.add_parking(ES, user, parking) is True:
-            return HttpResponse(json.dumps("Parking Reported Successfully"),
-                content_type="application/json")
-        else:
-            return HttpResponse(json.dumps("Parking already exists"),
-                                content_type="application/json")
 
-    except KeyError:
-        return HttpResponse(json.dumps("Invalid values for parking location"),
+        response = esindex.add_parking(ES, user, parking)
+
+        if response["status"] is False:
+            message["success"] = response["status"]
+            message["message"] = response["message"]
+
+        return HttpResponse(json.dumps(message),
+                            content_type="application/json")
+
+    except KeyError as error:
+        return HttpResponse(json.dumps(error),
                             status=500)
 
     except TransportError as error:
@@ -84,12 +87,12 @@ def searchparking(request):
             "lat": request.GET["lat"],
             "lon": request.GET["lon"]
         }
-        result = esindex.search_parking(ES, user, location, "500m")
+        result = esindex.search_parking(ES, user, location, "100m")
         return HttpResponse(json.dumps(result),
                             content_type="application/json")
 
-    except KeyError:
-        return HttpResponse(json.dumps("Please provide a valid location"),
+    except KeyError as error:
+        return HttpResponse(json.dumps(error),
                             content_type="application/json", status=500)
 
     except TransportError:
@@ -103,6 +106,7 @@ def adduser(request):
     """
         New User registers to system
     """
+    message = {"success": True}
     try:
         user_id = request.POST["id"]
         name = request.POST["name"]
@@ -111,14 +115,30 @@ def adduser(request):
             "score": 100
         }
         esindex.add_user(ES, user_id, record)
-        return HttpResponse(json.dumps("User added successfully"), content_type="application/json")
-    except KeyError:
-        return HttpResponse(json.dumps("Please provide valid user details"),
-                            status=500, content_type="application/json")
+        return HttpResponse(json.dumps(message),
+                            content_type="application/json")
 
-    except (TransportError, Exception) as error:
-        message = "Unkown error in adding user"
-        if error.status_code == 409:
-            message = "User already exists"
+    except (KeyError, TransportError, Exception) as error:
+        status = 200
+        if error.status_code != 409:
+            message["success"] = False
+            status = 500
+        return HttpResponse(json.dumps(message), status=status,
+                            content_type="application/json")
+
+@require_GET
+def getuser(request):
+    """
+        get user profile data
+    """
+    message = {"success": True}
+    try:
+        user_id = request.GET['id']
+        message['user'] = esindex.getuser(ES, user_id)
+        return HttpResponse(json.dumps(message), status=200,
+                            content_type="application/json")
+
+    except (KeyError, ValueError, TransportError):
+        message["success"] = False
         return HttpResponse(json.dumps(message), status=500,
                             content_type="application/json")

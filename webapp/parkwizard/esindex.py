@@ -68,7 +68,25 @@ def add_user(es, user_id, record):
     """s
         Create new user in users index
     """
-    es.create(index="users", doc_type="user", id=user_id, body=record)
+    message = {"status": True}
+    _es_response = es.create(index="users", doc_type="user",
+                             id=user_id, body=record)
+    
+    """
+        user created successfully
+    """
+    if _es_response['created'] is True:
+        message['id'] = _es_response['_id']
+        pass
+    return message
+
+
+def getuser(es, user_id):
+    """
+        search user_id profile data
+    """
+    return ""
+
 
 def __search_parking(es, location, radius):
     """
@@ -81,19 +99,20 @@ def __search_parking(es, location, radius):
             },
             "filter":{
                 "geo_distance": {
-                "distance": radius,
-                "location": location
+                    "distance": radius,
+                    "location": location
                 }
             }
         }
     }
 
     results = es.search(index="parkinglocations", size=50,
-                       filter_path=['hits.hits._source.location',
-                                    'hits.hits._source.name',
-                                    'hits.hits._source.available'],
-                       body={"query": query})
-    
+                        filter_path=['hits.hits._source.location',
+                                     'hits.hits._source.name',
+                                     'hits.hits._source.available',
+                                     'hits.hits._source.spots'],
+                        body={"query": query})
+
     try:
         results = results['hits']['hits']
     except KeyError:
@@ -105,14 +124,16 @@ def add_parking(es, user_id, parking):
     """
         Confirm and add a parking spot
     """
+    response = {"status": True}
     existing = __search_parking(es, parking['location'], "50m")
-    print 'AFTER'
 
     # ignore if parking reported in 50m radius previously
     if len(existing) > 0:
-        return False
-    es.create(index="parkinglocations", doc_type='parking', body=parking)
-    return True
+        response["status"] = False
+        response["message"] = "Untrusted parking. Already in 50m radius"
+    else:
+        es.index(index="parkinglocations", doc_type='parking', body=parking)
+    return response
 
 
 def search_parking(es, user, location, radius):
@@ -129,7 +150,8 @@ def search_parking(es, user, location, radius):
         record = dict()
         record['name'] = result['_source']['name']
         record['location'] = result['_source']['location']
-        record['available'] = result['_source']['available']
+        record['available'] = int(result['_source']['available'])
+        record['spots'] = int(result['_source']['spots'])
         parkings.append(record)
     return parkings
 

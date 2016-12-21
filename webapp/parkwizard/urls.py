@@ -9,4 +9,5 @@ urlpatterns = [
     url(r'^addparking$', views.addparking, name='addparking'),
     url(r'^searchparking$', views.searchparking, name='searchparking'),
     url(r'^adduser$', views.adduser, name='adduser'),
+    url(r'^getuser$', views.getuser, name='getuser'),
 ]
