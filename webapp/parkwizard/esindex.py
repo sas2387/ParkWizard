@@ -131,14 +131,20 @@ def getscore(es, user_id):
         response["score"] = int(result[0]['_source']['score'])
     return response
 
-def __search_parking(es, location, radius):
+def __search_parking(es, location, available, radius):
     """
-        Get elasticsearch result
+        Get parking locations with
+        atleast available number of 
+        available spaces in a parking
     """
     query = {
         "filtered":{
             "query":{
-                "match_all": {}
+                "range":{
+                    "available":{
+                        "gte": available
+                    }
+                }
             },
             "filter":{
                 "geo_distance": {
@@ -168,7 +174,7 @@ def add_parking(es, user_id, parking):
         Confirm and add a parking spot
     """
     response = {"status": True}
-    existing = __search_parking(es, parking['location'], "50m")
+    existing = __search_parking(es, parking['location'], 0, "50m")
 
     # ignore if parking reported in 50m radius previously
     if len(existing) > 0:
@@ -202,7 +208,7 @@ def search_parking(es, user, location, radius):
         response['message'] = "Insufficient score !"
 
     else:
-        results = __search_parking(es, location, radius)
+        results = __search_parking(es, location, 1, radius)
         if len(results) < 1:
             response['message'] = "No parking found !"
 
