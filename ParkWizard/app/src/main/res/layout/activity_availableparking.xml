@@ -10,7 +10,13 @@
 
     <com.google.android.gms.maps.MapView
         android:id="@+id/parkingMapView"
+        android:layout_weight="1"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="I am using this!"/>
 
 </LinearLayout>

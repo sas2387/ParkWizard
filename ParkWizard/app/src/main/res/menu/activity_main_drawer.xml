@@ -7,7 +7,7 @@
             android:icon="@drawable/ic_menu_camera"
             android:title="Search Parking" />
         <item
-            android:id="@+id/add_parking"
+            android:id="@+id/report_parking"
             android:icon="@drawable/ic_menu_gallery"
             android:title="Report Parking" />
 
