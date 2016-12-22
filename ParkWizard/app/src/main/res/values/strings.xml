@@ -5,4 +5,8 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
+    <string name="adduserurl">http://160.39.135.196:8000/adduser</string>
+    <string name="searchparkingurl">http://160.39.135.196:8000/searchparking</string>
+    <string name="getpointsurl">http://160.39.135.196:8000/getscore</string>
+
 </resources>

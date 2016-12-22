@@ -147,7 +147,7 @@ public class SearchParkingFragment extends Fragment {
                         public void onClick(DialogInterface dialog, int id) {
                             // User clicked OK button
                             Intent intent = new Intent(getActivity(), AvailableParkingActivity.class);
-                            intent.putExtra("destLatLng",destLatLng);
+                            intent.putExtra("destLatLng", destLatLng);
                             startActivity(intent);
                         }
                     });
