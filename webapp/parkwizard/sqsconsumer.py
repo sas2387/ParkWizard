@@ -123,7 +123,7 @@ def process_sqs(url):
                     response = addparking(request)
                     print response
                 elif request['type'] == 'update':
-                    updateparking(request)
+                    response = updateparking(request)
                     print response
                 else:
                     print 'Invalid request'
