@@ -170,21 +170,30 @@ def __search_parking(es, location, available, radius):
     return results
 
 
-def add_parking(es, user_id, parking):
+def add_parking(es, user, parking):
     """
         Confirm and add a parking spot
     """
-    response = {"status": True}
-    existing = __search_parking(es, parking['location'], 0, "50m")
-
-    # ignore if parking reported in 50m radius previously
-    if len(existing) > 0:
-        response["status"] = False
-        response["message"] = "Untrusted parking. Already in 50m radius"
+    reward = 10
+    response = {"success": True}
+    score = getscore(es, user)
+    if score["success"] is False:
+        response['success'] = False
+        response['message'] = "User record not found !"
     else:
-        es.index(index="parkinglocations", doc_type='parking', body=parking)
+        existing = __search_parking(es, parking['location'], 0, "50m")
+        # ignore if parking reported in 50m radius previously
+        if len(existing) > 0:
+            response["success"] = False
+            response["message"] = "Duplicate parking spot !"
+        else:
+            es.index(index="parkinglocations", doc_type='parking',
+                     body=parking)
+            update = {"doc":{"score": score["score"] + reward}}
+            es.update(index="users", doc_type="user", id=user, body=update)
+            response['score'] = update['doc']['score']
+            response['message'] = 'Score updated!'
     return response
-
 
 def search_parking(es, user, cost, location, radius):
     """
@@ -224,6 +233,7 @@ def search_parking(es, user, cost, location, radius):
             # parse results
             for result in results:
                 record = dict()
+                record['locid'] = result['_id']
                 record['name'] = result['_source']['name']
                 record['location'] = result['_source']['location']
                 record['available'] = int(result['_source']['available'])
@@ -247,9 +257,9 @@ def __getparking(es, locid):
         }
     }
     result = es.search(index="parkinglocations", size=1,
-                   filter_path=['hits.hits._source.spots',
-                                'hits.hits._source.available'],
-                   body={"query": query})
+                       filter_path=['hits.hits._source.spots',
+                                    'hits.hits._source.available'],
+                       body={"query": query})
 
     result = result['hits']['hits']
     if bool(result) is False or len(result) < 1:

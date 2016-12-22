@@ -45,7 +45,7 @@ def addparking(request):
         Allow users to report parking location
     """
     # create a parking index if does not exists already
-    message = {"success": True}
+    response = {"success": True}
     try:
         user = request.POST['id']
         location = {
@@ -60,10 +60,6 @@ def addparking(request):
         }
 
         response = esindex.add_parking(ES, user, parking)
-
-        if response["status"] is False:
-            message["success"] = response["status"]
-            message["message"] = response["message"]
 
         return HttpResponse(json.dumps(message),
                             content_type="application/json")
@@ -170,7 +166,7 @@ def getupdatelocations(request):
         # parse results
         for result in results:
             record = dict()
-            record['id'] = result['_id']
+            record['locid'] = result['_id']
             record['name'] = result['_source']['name']
             record['location'] = result['_source']['location']
             parkings.append(record)
