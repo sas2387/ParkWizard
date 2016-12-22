@@ -55,8 +55,8 @@ def addparking(request):
         parking = {
             'name': request.POST['name'],
             'location': location,
-            'spots': request.POST['spots'],
-            'available': request.POST['spots']
+            'spots': int(request.POST['spots']),
+            'available': int(request.POST['spots'])
         }
 
         response = esindex.add_parking(ES, user, parking)
@@ -194,7 +194,7 @@ def updateparking(request):
     response = {"success": True}
     try:
         user_id = request.POST['id']
-        available = request.POST["available"]
+        available = int(request.POST["available"])
         locid = request.POST["locid"]
         response = esindex.updateparking(ES, user_id, locid, available)
     except (KeyError, TransportError) as error:

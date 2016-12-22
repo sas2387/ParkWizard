@@ -252,7 +252,7 @@ def __getparking(es, locid):
                    body={"query": query})
 
     result = result['hits']['hits']
-    if len(result) < 1:
+    if bool(result) is False or len(result) < 1:
         response["success"] = False
     else:
         response["spots"] = int(result[0]['_source']['spots'])
@@ -264,17 +264,39 @@ def updateparking(es, user, locid, available):
     """
         update available positions at location id
     """
-    response = {"success": True}
-    if available < 1:
+    reward = 2
+    response = {"success": True,
+                "score": 0}
+    body = {"doc":{"score": 0}}
+
+    #validate user
+    score = getscore(es, user)
+    if score['success'] is False:
+        response['success'] = False
+        response['message'] = 'Invalid User !'
+        return response
+
+    #update parking
+    parking = __getparking(es, locid)
+    if available < 0 or parking['success'] is False:
         response["success"] = False
-        response["message"] = "Invalid data !"
+        response["message"] = "Invalid query !"
     else:
         #check available max value
-        #update user points
-        #use script painless of elasticsearch for points update
-        update = {"doc":{"available": available}}
-        es.update(index='parkinglocations', doc_type='parking', id=locid,
-                  body=update)
+        if available > parking['spots']:
+            body['doc']['score'] = score['score'] - reward
+            response['success'] = False
+            response['message'] = "False Information"
+        else:
+            body['doc']['score'] = score['score'] + reward
+            update = {"doc":{"available": available}}
+            es.update(index='parkinglocations', doc_type='parking',
+                      id=locid, body=update)
+            response['message'] = "Thanks for the update!"
+
+        #send user score update
+        es.update(index='users', doc_type='user', id=user, body=body)
+        response['score'] = body['doc']['score']
 
     return response
 
