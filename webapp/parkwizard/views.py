@@ -81,23 +81,27 @@ def searchparking(request):
     """
         Get available parking locations
     """
+    response = dict()
+    status = 200
     try:
         user = request.GET["id"]
         location = {
             "lat": request.GET["lat"],
             "lon": request.GET["lon"]
         }
-        result = esindex.search_parking(ES, user, location, "100m")
-        return HttpResponse(json.dumps(result),
-                            content_type="application/json")
+        #search 500 meters range
+        radius = "500m"
+        response = esindex.search_parking(ES, user, location, radius)
 
-    except KeyError as error:
-        return HttpResponse(json.dumps(error),
-                            content_type="application/json", status=500)
-
-    except TransportError:
-        return HttpResponse(json.dumps("Error in searching parking locations"),
-                            content_type="application/json", status=500)
+    except (KeyError, TransportError) as error:
+        response = {
+            "success": False,
+            "message": error,
+            "parkings": []
+        }
+        status = 500
+    return HttpResponse(json.dumps(response), content_type="application/json",
+                        status=status)
 
 
 @require_POST

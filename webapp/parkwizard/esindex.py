@@ -183,20 +183,49 @@ def search_parking(es, user, location, radius):
     """
         get parking search in radius
     """
+    cost = 5 #cost of valid search
     parkings = list()
-    results = __search_parking(es, location, radius)
-    if len(results) < 1:
-        return parkings
+    response = {
+        "success": True,
+        "message": None,
+        "parkings": parkings}
+    """
+        Check valid user and number of points
+    """
+    score = getscore(es, user)
+    if score["success"] is False:
+        response['success'] = False
+        response['message'] = "User record not found !"
 
-    # parse results
-    for result in results:
-        record = dict()
-        record['name'] = result['_source']['name']
-        record['location'] = result['_source']['location']
-        record['available'] = int(result['_source']['available'])
-        record['spots'] = int(result['_source']['spots'])
-        parkings.append(record)
-    return parkings
+    elif score["score"] < cost:
+        response['success'] = False
+        response['message'] = "Insufficient score !"
+
+    else:
+        results = __search_parking(es, location, radius)
+        if len(results) < 1:
+            response['message'] = "No parking found !"
+
+        else:
+            update = {
+                "doc":{
+                    "score": score["score"] - cost
+                }
+            }
+            es.update(index="users", doc_type="user", id=user, body=update)
+
+            # parse results
+            for result in results:
+                record = dict()
+                record['name'] = result['_source']['name']
+                record['location'] = result['_source']['location']
+                record['available'] = int(result['_source']['available'])
+                record['spots'] = int(result['_source']['spots'])
+                parkings.append(record)
+            response['parkings'] = parkings
+            response['message'] = str(len(parkings)) + " parking locations !"
+
+    return response
 
 """
     BEWARE: This will nuke your data completely
