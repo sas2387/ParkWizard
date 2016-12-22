@@ -91,7 +91,8 @@ def searchparking(request):
         }
         #search 500 meters range
         radius = "500m"
-        response = esindex.search_parking(ES, user, location, radius)
+        cost = 5 #cost of valid search of parking
+        response = esindex.search_parking(ES, user, cost, location, radius)
 
     except (KeyError, TransportError) as error:
         response = {
@@ -144,3 +145,61 @@ def getscore(request):
         message["success"] = False
         return HttpResponse(json.dumps(message), status=500,
                             content_type="application/json")
+
+@require_GET
+def getupdatelocations(request):
+    """
+        get locations in 50m radius that can be updated by the user
+    """
+    status = 200
+    response = {
+        "success": True,
+        "message": "Parking locations found !",
+        "parkings": []
+    }
+    try:
+        user = request.GET["id"]
+        location = {
+            "lat": request.GET["lat"],
+            "lon": request.GET["lon"]
+        }
+        #search 50 meters range
+        radius = "50m"
+        parkings = list()
+        results = esindex.__search_parking(ES, location, 0, radius)
+        # parse results
+        for result in results:
+            record = dict()
+            record['id'] = result['_id']
+            record['name'] = result['_source']['name']
+            record['location'] = result['_source']['location']
+            parkings.append(record)
+        response['parkings'] = parkings
+
+    except (KeyError, TransportError) as error:
+        response["success"] = False
+        response["message"] = error
+        status = 500
+    return HttpResponse(json.dumps(response), content_type="application/json",
+                        status=status)
+
+@require_POST
+@csrf_exempt
+def updateparking(request):
+    """
+        update a parking spot
+        penalise user if he/she gives bad information
+    """
+    status = 200
+    response = {"success": True}
+    try:
+        user_id = request.POST['id']
+        available = request.POST["available"]
+        locid = request.POST["locid"]
+        response = esindex.updateparking(ES, user_id, locid, available)
+    except (KeyError, TransportError) as error:
+        response["success"] = False
+        response["message"] = error
+        status = 500
+    return HttpResponse(json.dumps(response), content_type="application/json",
+                        status=status)

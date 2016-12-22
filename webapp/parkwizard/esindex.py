@@ -121,13 +121,13 @@ def getscore(es, user_id):
         }
     }
     result = es.search(index="users", size=1,
-                   filter_path=['hits.hits._source.score'],
-                   body={"query": query})
+                       filter_path=['hits.hits._source.score'],
+                       body={"query": query})
 
-    result = result['hits']['hits']
-    if len(result) < 1:
+    if bool(result) is False or len(result) < 1:
         response["success"] = False
     else:
+        result = result['hits']['hits']
         response["score"] = int(result[0]['_source']['score'])
     return response
 
@@ -156,16 +156,17 @@ def __search_parking(es, location, available, radius):
     }
 
     results = es.search(index="parkinglocations", size=50,
-                        filter_path=['hits.hits._source.location',
+                        filter_path=['hits.hits._id',
+                                     'hits.hits._source.location',
                                      'hits.hits._source.name',
                                      'hits.hits._source.available',
                                      'hits.hits._source.spots'],
                         body={"query": query})
 
-    try:
+    if bool(results) is True:
         results = results['hits']['hits']
-    except KeyError:
-        pass
+    else:
+        results = []
     return results
 
 
@@ -185,11 +186,11 @@ def add_parking(es, user_id, parking):
     return response
 
 
-def search_parking(es, user, location, radius):
+def search_parking(es, user, cost, location, radius):
     """
         get parking search in radius
+        cost of valid search
     """
-    cost = 5 #cost of valid search
     parkings = list()
     response = {
         "success": True,
@@ -232,6 +233,51 @@ def search_parking(es, user, location, radius):
             response['message'] = str(len(parkings)) + " parking locations !"
 
     return response
+
+def __getparking(es, locid):
+    """
+        get parking information for locid
+    """
+    response = {"success": True}
+    query = {
+        "query": {
+            "ids":{
+                "values": [locid]
+            }
+        }
+    }
+    result = es.search(index="parkinglocations", size=1,
+                   filter_path=['hits.hits._source.spots',
+                                'hits.hits._source.available'],
+                   body={"query": query})
+
+    result = result['hits']['hits']
+    if len(result) < 1:
+        response["success"] = False
+    else:
+        response["spots"] = int(result[0]['_source']['spots'])
+        response["available"] = int(result[0]['_source']['available'])
+    return response
+
+
+def updateparking(es, user, locid, available):
+    """
+        update available positions at location id
+    """
+    response = {"success": True}
+    if available < 1:
+        response["success"] = False
+        response["message"] = "Invalid data !"
+    else:
+        #check available max value
+        #update user points
+        #use script painless of elasticsearch for points update
+        update = {"doc":{"available": available}}
+        es.update(index='parkinglocations', doc_type='parking', id=locid,
+                  body=update)
+
+    return response
+
 
 """
     BEWARE: This will nuke your data completely
