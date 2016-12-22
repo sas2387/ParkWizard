@@ -176,7 +176,7 @@ public class SearchParkingFragment extends Fragment {
                 Place place = PlaceAutocomplete.getPlace(getActivity(), data);
                 destLatLng = place.getLatLng();
                 Log.d(TAG, "lat:" + destLatLng.latitude);
-                Log.d(TAG, "lng:" + destLatLng.longitude);
+                Log.d(TAG, "lon:" + destLatLng.longitude);
                 Log.i(TAG, "Place: " + place.getName());
                 googleMap.clear();
                 googleMap.addMarker(new MarkerOptions()

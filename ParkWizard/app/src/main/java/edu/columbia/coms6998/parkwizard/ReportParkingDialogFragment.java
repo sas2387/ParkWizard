@@ -50,7 +50,7 @@ public class ReportParkingDialogFragment extends DialogFragment {
                     Toast.makeText(getActivity(), "Please enter valid data",Toast.LENGTH_SHORT).show();
                 } else {
                     String location = etLocationName.getText().toString();
-                    String spots = etSpots.getText().toString();
+                    int spots = Integer.parseInt(etSpots.getText().toString());
                     targetFragment.onDialogPositiveClick(ReportParkingDialogFragment.this, location,spots);
                 }
             }

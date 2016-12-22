@@ -1,12 +1,14 @@
 package edu.columbia.coms6998.parkwizard;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
@@ -30,6 +32,7 @@ import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.gson.Gson;
 
 import java.util.List;
 
@@ -48,11 +51,14 @@ public class ReportParkingFragment extends Fragment{
     final String TAG = "ReportParkingFragment";
     Location userLocation;
     final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 201;
+    final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 202;
+    private static String PROPERTY_REG_ID = "registration_id";
     LatLng selectedLatLng;
     CognitoCachingCredentialsProvider credentialsProvider;
 
     @Override
     public View onCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle) {
+        Log.d("DEBUG","oncreate called");
         View rootView = layoutInflater.inflate(R.layout.fragment_reportparking, viewGroup, false);
         addParkingButton = (Button) rootView.findViewById(R.id.btAddParking);
         mMapView = (MapView) rootView.findViewById(R.id.mapView);
@@ -125,11 +131,11 @@ public class ReportParkingFragment extends Fragment{
     @Override
     public void onStart() {
         super.onStart();
-
+        Log.d("COGNITO","Cached credentials should be present");
         credentialsProvider = new CognitoCachingCredentialsProvider(
                 getActivity().getApplicationContext(),
-                "us-west-2:955e3ceb-26d4-4080-92b2-42a0edc2bf7f", // Identity Pool ID
-                Regions.US_WEST_2 // Region
+                "us-east-1:23ace8aa-c8e6-4a67-ae5c-3e463343d6e6", // Identity Pool ID
+                Regions.US_EAST_1 // Region
         );
 
         addParkingButton.setOnClickListener(new View.OnClickListener() {
@@ -147,24 +153,48 @@ public class ReportParkingFragment extends Fragment{
         });
     }
 
-    public void onDialogPositiveClick(DialogFragment dialog,String location, String spots){
+    public void onDialogPositiveClick(DialogFragment dialog,final String location, final int spots){
         dialog.getDialog().dismiss();
 
-        //get data and send to sqs
-        AmazonSQSClient sqs = new AmazonSQSClient(credentialsProvider);
-        Region usWest2 = Region.getRegion(Regions.US_WEST_2);
-        sqs.setRegion(usWest2);
-        String queueUrl = sqs.listQueues("parkinglocations").getQueueUrls().get(0);
+        new AsyncTask<Void, Void, Void>(){
+            @Override
+            protected Void doInBackground(Void... voids) {
+                //get data and send to sqs
+                AmazonSQSClient sqs = new AmazonSQSClient(credentialsProvider);
+                Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+                sqs.setRegion(usEast1);
+                String queueUrl = sqs.listQueues("parkinglocations").getQueueUrls().get(0);
 
-        ParkingLocation pl = new ParkingLocation();
-        pl.name = location;
-        pl.spots = spots;
-        pl.lat = String.valueOf(selectedLatLng.latitude);
-        pl.lng = String.valueOf(selectedLatLng.longitude);
+                SharedPreferences sp = getActivity().getSharedPreferences("USER_PROFILE",Context.MODE_PRIVATE);
+                String userid = sp.getString("userid","");
+                SharedPreferences gcmprefs = getActivity().getSharedPreferences("GCM",Context.MODE_PRIVATE);
+                String regid = gcmprefs.getString(PROPERTY_REG_ID, "");
 
-        sqs.sendMessage(new SendMessageRequest(queueUrl, pl.toString()));
+                ParkingLocation pl = new ParkingLocation();
+                pl.id = userid;
+                pl.type = "report";
+                pl.name = location;
+                pl.spots = spots;
+                pl.regid = regid;
+                pl.lat = String.valueOf(selectedLatLng.latitude);
+                pl.lon = String.valueOf(selectedLatLng.longitude);
+                try {
+                    Gson gson = new Gson();
+                    String jsonInString = gson.toJson(pl);
+                    sqs.sendMessage(new SendMessageRequest(queueUrl, jsonInString));
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                return null;
+            }
 
-        Toast.makeText(getActivity(),"Parking Reported",Toast.LENGTH_SHORT).show();
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                Toast.makeText(getActivity(),"Parking Reported",Toast.LENGTH_SHORT).show();
+            }
+        }.execute();
+
     }
 
     public void onDialogNegativeClick(DialogFragment dialog){

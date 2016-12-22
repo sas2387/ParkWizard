@@ -10,6 +10,10 @@
             android:id="@+id/report_parking"
             android:icon="@drawable/ic_menu_gallery"
             android:title="Report Parking" />
+        <item
+            android:id="@+id/update_parking_menu"
+            android:icon="@drawable/ic_menu_send"
+            android:title="Update Parking"/>
 
     </group>
 

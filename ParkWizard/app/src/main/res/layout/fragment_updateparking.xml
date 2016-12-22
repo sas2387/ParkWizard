@@ -1,23 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_horizontal"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <include
-        layout="@layout/toolbar"
+    <ListView
+        android:id="@+id/lvParkingLocations"
+        android:choiceMode="singleChoice"
+        android:descendantFocusability="blocksDescendants"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/parkingMapView"
-        android:layout_weight="1"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_weight="1"></ListView>
 
     <Button
-        android:id="@+id/btUsingThis"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Use this!"/>
+        android:id="@+id/btnUpdate"
+        android:text="Update"/>
 
 </LinearLayout>

@@ -1,31 +1,21 @@
 package edu.columbia.coms6998.parkwizard;
 
-import android.Manifest;
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.amazonaws.auth.CognitoCachingCredentialsProvider;
-import com.amazonaws.regions.Regions;
-import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
 
@@ -38,8 +28,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by Siddharth on 11/21/2016.
@@ -51,6 +39,10 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     GoogleApiClient mGoogleApiClient;
     SignInButton signInButton;
     final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 201;
+    String name;
+    String email;
+    String userID;
+
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -102,75 +94,15 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         if (result.isSuccess()) {
             // Signed in successfully, show authenticated UI.
             GoogleSignInAccount acct = result.getSignInAccount();
-            String email = acct.getEmail();
-            String name = acct.getDisplayName();
-            name = acct.getGivenName();
-            String userID = acct.getId();
-            Log.d(TAG, "name:" + name);
-            Log.d(TAG, "email:" + email);
-            Log.d(TAG, "userID:" + userID);
+            email = acct.getEmail();
+            name = acct.getDisplayName();
+            userID = acct.getId();
             sendToBackEnd(name, email, userID);
             //mStatusTextView.setText(getString(R.string.signed_in_fmt, acct.getDisplayName()));
             //updateUI(true);
         } else {
             // Signed out, show unauthenticated UI.
             //updateUI(false);
-        }
-    }
-
-    void createAWSCredentials() {
-
-        CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
-                getApplicationContext(),
-                "us-west-2:955e3ceb-26d4-4080-92b2-42a0edc2bf7f", // Identity Pool ID
-                Regions.US_WEST_2 // Region
-        );
-        if (ContextCompat.checkSelfPermission(LoginActivity.this, Manifest.permission.GET_ACCOUNTS)
-                != PackageManager.PERMISSION_GRANTED ){
-            ActivityCompat.requestPermissions(LoginActivity.this,
-                    new String[]{Manifest.permission.GET_ACCOUNTS},
-                    MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
-        } else {
-            try {
-                GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext());
-                AccountManager am = AccountManager.get(this);
-                Account[] accounts = am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
-                String token = GoogleAuthUtil.getToken(getApplicationContext(), accounts[0].name,
-                        "audience:server:client_id:494925756460-06b1v1e9ffq3oe85f8o26me8ppcv49va.apps.googleusercontent.com");
-                Map<String, String> logins = new HashMap<String, String>();
-                logins.put("accounts.google.com", token);
-                credentialsProvider.setLogins(logins);
-            }catch (Exception e ){
-                e.printStackTrace();
-            }
-        }
-
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_GET_ACCOUNTS: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS)
-                            != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(LoginActivity.this,
-                                new String[]{Manifest.permission.GET_ACCOUNTS},
-                                MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
-                    } else {
-                        createAWSCredentials();
-                    }
-                } else {
-                    //Log.d(TAG, "Permission not granted");
-                }
-                return;
-            }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
