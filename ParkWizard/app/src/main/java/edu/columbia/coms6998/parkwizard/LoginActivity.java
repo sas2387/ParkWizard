@@ -54,6 +54,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken("494925756460-u3jofjt7nn57pnb612vjnq4rgo29ocgi.apps.googleusercontent.com")
                 .requestEmail()
                 .build();
 
@@ -76,12 +77,12 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     protected void onStart() {
         super.onStart();
         mGoogleApiClient.connect();
-        SharedPreferences sp = getSharedPreferences("USER_PROFILE",MODE_PRIVATE);
+        /*SharedPreferences sp = getSharedPreferences("USER_PROFILE",MODE_PRIVATE);
         String userid = sp.getString("userid",null);
         if(userid != null) {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
-        }
+        }*/
     }
 
     public void signIn(View v) {
@@ -97,6 +98,8 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            String token = result.getSignInAccount().getIdToken();
+            Log.d("TOKEN",token);
             handleSignInResult(result);
         }
     }

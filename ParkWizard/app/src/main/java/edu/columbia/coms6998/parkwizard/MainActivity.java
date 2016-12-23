@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -30,6 +31,7 @@ import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -61,7 +63,7 @@ public class MainActivity extends AppCompatActivity
     private static String PROPERTY_REG_ID = "registration_id";
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-
+    private static final int RC_SIGN_IN = 9001;
     GoogleApiClient mGoogleApiClient;
 
     @Override
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -85,6 +88,7 @@ public class MainActivity extends AppCompatActivity
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
+                .requestIdToken("494925756460-u3jofjt7nn57pnb612vjnq4rgo29ocgi.apps.googleusercontent.com")
                 .build();
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
@@ -293,44 +297,54 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    void createAWSCredentials() {
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG,"in result");
+        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            String token = result.getSignInAccount().getIdToken();
 
-        new AsyncTask<Void, Void, Void>(){
-            @Override
-            protected Void doInBackground(Void... voids) {
-                Log.d("COGNITO","Getting credentials");
-                CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
+            new AsyncTask<Void, Void, Void>(){
+                @Override
+                protected Void doInBackground(Void... voids) {
+                    Log.d("COGNITO","Getting credentials");
+                    CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
                             getApplicationContext(),
                             "us-east-1:23ace8aa-c8e6-4a67-ae5c-3e463343d6e6", // Identity Pool ID
                             Regions.US_EAST_1 // Region
                     );
 
-                if (ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.GET_ACCOUNTS)
-                        != PackageManager.PERMISSION_GRANTED ){
-                    ActivityCompat.requestPermissions(MainActivity.this,
-                            new String[]{android.Manifest.permission.GET_ACCOUNTS},
-                            MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
-                } else {
-                    try {
-                        GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext());
-                        AccountManager am = AccountManager.get(getApplicationContext());
-                        Account[] accounts = am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
-                        String token = GoogleAuthUtil.getToken(getApplicationContext(), accounts[0].name,
-                                "audience:server:client_id:494925756460-44fbos95av1vdbsdj8i7tp7o51s5j4j4.apps.googleusercontent.com");
-                        Map<String, String> logins = new HashMap<String, String>();
-                        logins.put("accounts.google.com", token);
-                        Log.d(TAG, logins.toString());
-                        credentialsProvider.setLogins(logins);
-                        Log.d("COGNITO","Stored:"+credentialsProvider.getLogins().toString());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (GoogleAuthException e) {
-                        e.printStackTrace();
+                    if (ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.GET_ACCOUNTS)
+                            != PackageManager.PERMISSION_GRANTED ){
+                        ActivityCompat.requestPermissions(MainActivity.this,
+                                new String[]{android.Manifest.permission.GET_ACCOUNTS},
+                                MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
+                    } else {
+                        try {
+                            Map<String, String> logins = new HashMap<String, String>();
+                            logins.put("accounts.google.com", token);
+                            Log.d(TAG, logins.toString());
+                            credentialsProvider.setLogins(logins);
+                            Log.d("COGNITO","Stored:"+credentialsProvider.getLogins().toString());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (GoogleAuthException e) {
+                            e.printStackTrace();
+                        }
                     }
+                    return null;
                 }
-                return null;
-            }
-        }.execute();
+            }.execute();
+        }
+    }
+
+    void createAWSCredentials() {
+        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+
+
 
     }
 

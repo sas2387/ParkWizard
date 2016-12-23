@@ -13,15 +13,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "494925756460-0e0lf2bms45c0jt826gqg8v4smn21a5f.apps.googleusercontent.com",
+          "client_id": "494925756460-gagu8e6l1dvps9gperg2bqm35th49dfb.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "edu.columbia.coms6998.parkwizard",
-            "certificate_hash": "446615E2C3D310BA8BC22E2FD70D555D510CB101"
+            "certificate_hash": "A5DD732F4ADD8730294C97AE7CD6CDB69EF894BF"
           }
         },
         {
-          "client_id": "494925756460-44fbos95av1vdbsdj8i7tp7o51s5j4j4.apps.googleusercontent.com",
+          "client_id": "494925756460-u3jofjt7nn57pnb612vjnq4rgo29ocgi.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
