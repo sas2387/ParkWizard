@@ -101,7 +101,7 @@ Various apps have been developed in the past but with an intention of providing 
 \textit{ParkWizard} is an Android app that helps users find available street parking locations. It works on a score based system where users earn points by reporting parking locations and updating availability status. The users further spend their earned score back into the app to search for available parking spots when needed. This score-based system works well towards maintaining a smooth information flow between users(drivers) who want to find available parking spots and those(informers) who have information about them. At any point, a user can update as well search for parking locations on the app.\par
 \end{block}
 
-\begin{block}{User Incentive \& Working}
+\begin{block}{User Incentive \& Protocol Design}
 \textit{Parkwizard} does not contain any parking location data of its own. It aims to incentivize users to provide the app with latest and most correct information about parking locations in their knowledge in return of earning reward points on the app. The scoring scheme is as follows:
 \begin{itemize}
     \item A user is rewarded 10 points for reporting a new parking location. However, a user is not allowed to report a parking within 50m of an already existing parking to avoid duplicates.
@@ -145,13 +145,18 @@ Various apps have been developed in the past but with an intention of providing 
 \begin{itemize}
     \item A user has to spend 5 points to search for parking locations they wish to find near their destination. By default the parking locations are shown within a 500m radius of destination.
 
-    \item To encourage users to keep the parking location most up to date, the app rewards them back 2 points if they choose to use a parking spot from the search results.
+    \item To encourage users to keep the parking location data most up to date, the app rewards them back 2 points if they choose to use a parking spot from the search results and navigates them to the location via Google Maps.
 \end{itemize}
 
-\begin{block}{Architecture}
-We make use of Google OAuth to facilitate user login through Google account. At the time of login we also utilize AWS Cognito to provide users with temporary security credentials to access our app's backend resources. We have built our backend with Django webserver that communicates with Elasticsearch(ES) to store and retrieve real-time parking information. When users report parking, the information is first enqueued to SQS queue from where it is dequeued by our Django server. This ensures reliable data delivery and efficient handling of load on the server side.
+\begin{block}{System Architecture \& Working}
+\textit{ParkWizard}
+The user signs up for the app using the Facebook OAuth 2.0 authentication. Further the app makes use of \textit{AWS Cognito service} to authenticate the app user for accessing the underlying AWS services associated with \textit{ParkWizard}.\par
 
-On receiving the reported parking information, Django server streams it to ES which stores the data in the (lat,long, \#available spots, \#total spots) format. The user information is also stored on ES in the format (userid, points). When searching for parking, Django server retrieves the data from ES based on (lat,long) provided by user and sends it back to the app. We deploy our Django server on a load balanced AWS ElasticBeanstalk. Django server sends notifications about operation's status to Google Cloud Messaging which redirects it to the user's registered device.
+The server side business logic is implemented using Django 1.10.4, deployed in \textit{AWS ElasticBeanstalk} auto-scaling environment. This is further backed by an auto-scaling deployment of \textit{AWS ElasticSearch} where the user data and parking location data is indexed for fast real time searching.\par
+
+\textit{Parkwizard} app uses \textit{Google Maps API} to display the geographical map as the primary user interface, where the user can see parking location search results, select parking locations to update available parking spots or report new parking locations from the menu option.\par
+
+The user requests for searching parking locations and signing up require fast realtime processing and hence serviced directly by the servers deployed in \textit{AWS ElasticBeanstalk} auto-scaling environment. On the other hand, updates to parking locations and new locations need to be processed in order with some delay tolerance, for which we use the \textit{AWS SQS} service to queue up the requests. A continually running server daemon process, consumes the request messages from the SQS queue, updates the parking data on ElasticSearch and notifies users about score updates via push notifications sent through \textit{Google Cloud Messaging}.
 \end{block}
 
 
@@ -163,7 +168,7 @@ On receiving the reported parking information, Django server streams it to ES wh
 \setbeamercolor{block alerted body}{fg=black,bg=white} % Change the alert block body colors
 
 \begin{alertblock}{Conclusion}
-Parkwizard is an android app with a mission to mitigate the inconvenience suffered while finding street parking. It employs a crowd-sourcing, score-based approach where users earn points on reporting free parking spots and use those points to find parking when required. ParkWizard utilizes various cloud services to function as a scalable, reliable and secure application.
+\textit{ParkWizard's} mission is to solve the tedious problem of daily parking as the cities grow more and more complex. The user incentive based approach for crowd sourcing latest information about parking location also ensures cheap, reliable and efficient data collection of parking locations which in turn results in most relevant search results and user activity.
 \end{alertblock}
 
 \end{column} % End of the third column
