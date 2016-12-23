@@ -192,7 +192,8 @@ def add_parking(es, user, parking):
             update = {"doc":{"score": score["score"] + reward}}
             es.update(index="users", doc_type="user", id=user, body=update)
             response['score'] = update['doc']['score']
-            response['message'] = 'Score updated!'
+            response['message'] = ('Your score increased by: '+
+                                   str(reward))
     return response
 
 def search_parking(es, user, cost, location, radius):
@@ -296,13 +297,15 @@ def updateparking(es, user, locid, available):
         if available > parking['spots']:
             body['doc']['score'] = score['score'] - reward
             response['success'] = False
-            response['message'] = "False Information"
+            response['message'] = ("You have been penalised " + str(reward)
+                                   + "points !")
         else:
             body['doc']['score'] = score['score'] + reward
             update = {"doc":{"available": available}}
             es.update(index='parkinglocations', doc_type='parking',
                       id=locid, body=update)
-            response['message'] = "Thanks for the update!"
+            response['message'] = ("Your score increased by " +
+                                   str(reward))
 
         #send user score update
         es.update(index='users', doc_type='user', id=user, body=body)

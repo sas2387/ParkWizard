@@ -16,3 +16,4 @@ python-dateutil==2.6.0
 requests-oauthlib==0.7.0
 six==1.10.0
 requests==2.11.1
+python-gcm==0.4
