@@ -11,6 +11,7 @@ import botocore
 from elasticsearch import Elasticsearch, RequestsHttpConnection, TransportError
 from requests_aws4auth import AWS4Auth
 from gcm import *
+from threading import Thread
 
 SQS = boto3.resource('sqs')
 QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/908762746590/parkinglocations"
@@ -146,7 +147,9 @@ def main():
     """
         consume queue messages
     """
-    process_sqs(QUEUE_URL)
+    # process_sqs(QUEUE_URL)
+    thread = Thread(target=process_sqs, args=(QUEUE_URL,))
+    thread.start()
 
 if __name__ == '__main__':
     main()
