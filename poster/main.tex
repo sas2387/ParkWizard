@@ -94,10 +94,8 @@ In this project, we introduce \textit{ParkWizard}, an incentive based android ap
 facility for hassle free parking.
 \end{alertblock}
 
-
 \begin{block}{Motivation}
-
-Finding open street parking spots in metropolitan cities such as New York has always been a distressing task. Various apps have been developed in the past but with an intention of helping users book garage parking instead of finding available street parking. To mitigate this issue, we have created ParkWizard which employs various cloud services to update users with real-time street parking information.
+Finding open street parking spots in metropolitan cities such as New York has always been a distressing task. Various apps have been developed in the past but with an intention of providing paid garage parking only. \textit{ParkWizard} is aimed at collecting data of street parking spots and providing real time search results to users.
 \end{block}
 
 %------------------
@@ -105,7 +103,6 @@ Finding open street parking spots in metropolitan cities such as New York has al
 %------------------
 
 \begin{block}{Introduction}
-
 ParkWizard is an Android application that helps users find available street parking locations. It works on a crowd-sourced, point-based system where users earn points by reporting street parking locations and are able to use those points in order to obtain available parking spots. This point-based system works well towards maintaining a smooth information flow between users(finders) who want to find available parking spots and those(informers) who have information about them. At a point, any user can act as a finder or an informer.\par
 
 Users are authenticated using Amazon Cognito which assigns temporary security credentials for accessing our backend AWS resources. The app displays all the available parking spots which are within 500 meters radius from the location where the user wants to find parking. Users are initially granted 100 free points on creating an account with our app. Each time, users lose 5 points on searching a parking and gain 10 points on reporting available parking spots.
