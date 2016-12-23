@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
     SQS message consumer
 """
@@ -119,12 +120,13 @@ def process_sqs(url):
     """
     receiver = get_queue(url)
     while True:
-        sleep(5)
+        sleep(1)
         for message in receiver.receive_messages(MaxNumberOfMessages=10):
             if message is not None:
                 message.delete()
                 try:
                     request = json.loads(message.body)
+                    print request
                 except ValueError:
                     continue
 
@@ -135,6 +137,7 @@ def process_sqs(url):
 
                 if request['type'] == 'report' or request['type'] == 'update':
                     try:
+                        print response
                         sendnotification(request['regid'], response)
                     except Exception as error:
                         print error
