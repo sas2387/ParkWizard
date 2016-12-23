@@ -9,6 +9,7 @@ import boto3
 import botocore
 from elasticsearch import Elasticsearch, RequestsHttpConnection, TransportError
 from requests_aws4auth import AWS4Auth
+from gcm import *
 
 SQS = boto3.resource('sqs')
 QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/908762746590/parkinglocations"
@@ -17,19 +18,22 @@ QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/908762746590/parkinglocations"
 CONFIG_FILE = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(CONFIG_FILE, "config.json")
 
-def load_config(filename):
+def load_config(filename, service):
     """
         load aws configuration
     """
     config = None
     with open(filename) as handle:
         config = json.load(handle)
-    return config["aws"]
+    return config[service]
 
-AWS_CONFIG = load_config(CONFIG_FILE)
+AWS_CONFIG = load_config(CONFIG_FILE, "aws")
 AWS_AUTH = AWS4Auth(AWS_CONFIG['access_key'], AWS_CONFIG['secret_key'],
                     AWS_CONFIG["region"], AWS_CONFIG["service"])
 
+GCM_CONFIG = load_config(CONFIG_FILE, "gcm")
+GCM_TOKEN = GCM_CONFIG['key']
+GCM_SENDER = GCM(GCM_TOKEN)
 
 # Global Elasticsearch object
 ES = Elasticsearch(hosts=[{'host': AWS_CONFIG["es_node"], 'port': 443}],
@@ -103,6 +107,11 @@ def updateparking(request):
 
     return response
 
+def sendnotification(device, message):
+    """
+        send message notification to device
+    """
+    GCM_SENDER.plaintext_request(registration_id=device, data=message)
 
 def process_sqs(url):
     """
@@ -115,18 +124,20 @@ def process_sqs(url):
             if message is not None:
                 message.delete()
                 try:
-                    print message.body
                     request = json.loads(message.body)
                 except ValueError:
                     continue
+
                 if request['type'] == 'report':
                     response = addparking(request)
-                    print response
-                elif request['type'] == 'update':
-                    response = updateparking(request)
-                    print response
                 else:
-                    print 'Invalid request'
+                    response = updateparking(request)
+
+                if request['type'] == 'report' or request['type'] == 'update':
+                    try:
+                        sendnotification(request['regid'], response)
+                    except Exception as error:
+                        print error
 
 def main():
     """

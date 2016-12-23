@@ -14,16 +14,16 @@ from . import esindex
 #everything aws about this project
 CONFIG_FILE = os.path.join(settings.BASE_DIR, "parkwizard", "config.json")
 
-def load_config(filename):
+def load_config(filename, service):
     """
         load aws configuration
     """
     config = None
     with open(filename) as handle:
         config = json.load(handle)
-    return config["aws"]
+    return config[service]
 
-AWS_CONFIG = load_config(CONFIG_FILE)
+AWS_CONFIG = load_config(CONFIG_FILE, "aws")
 AWS_AUTH = AWS4Auth(AWS_CONFIG['access_key'], AWS_CONFIG['secret_key'],
                     AWS_CONFIG["region"], AWS_CONFIG["service"])
 
@@ -160,7 +160,7 @@ def getupdatelocations(request):
             "lon": request.GET["lon"]
         }
         #search 50 meters range
-        radius = "50m"
+        radius = "100m"
         parkings = list()
         results = esindex.__search_parking(ES, location, 0, radius)
         # parse results
