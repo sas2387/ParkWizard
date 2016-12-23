@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
     SQS message consumer
 """
@@ -10,6 +11,7 @@ import botocore
 from elasticsearch import Elasticsearch, RequestsHttpConnection, TransportError
 from requests_aws4auth import AWS4Auth
 from gcm import *
+from threading import Thread
 
 SQS = boto3.resource('sqs')
 QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/908762746590/parkinglocations"
@@ -119,12 +121,13 @@ def process_sqs(url):
     """
     receiver = get_queue(url)
     while True:
-        sleep(5)
+        sleep(1)
         for message in receiver.receive_messages(MaxNumberOfMessages=10):
             if message is not None:
                 message.delete()
                 try:
                     request = json.loads(message.body)
+                    print request
                 except ValueError:
                     continue
 
@@ -135,6 +138,7 @@ def process_sqs(url):
 
                 if request['type'] == 'report' or request['type'] == 'update':
                     try:
+                        print response
                         sendnotification(request['regid'], response)
                     except Exception as error:
                         print error
@@ -143,7 +147,9 @@ def main():
     """
         consume queue messages
     """
-    process_sqs(QUEUE_URL)
+    # process_sqs(QUEUE_URL)
+    thread = Thread(target=process_sqs, args=(QUEUE_URL,))
+    thread.start()
 
 if __name__ == '__main__':
     main()
