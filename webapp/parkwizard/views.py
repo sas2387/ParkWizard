@@ -163,6 +163,8 @@ def getupdatelocations(request):
         radius = "100m"
         parkings = list()
         results = esindex.__search_parking(ES, location, 0, radius)
+        if len(results) < 1:
+            response['message'] = 'No nearby parking to update !'
         # parse results
         for result in results:
             record = dict()
