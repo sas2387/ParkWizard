@@ -2,9 +2,15 @@ package edu.columbia.coms6998.parkwizard;
 
 
 import android.app.IntentService;
+import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 public class GcmMessageHandler extends IntentService {
@@ -27,12 +33,12 @@ public class GcmMessageHandler extends IntentService {
         Log.d("NOTIFICATION", "Obtained");
         Log.d("N",""+Boolean.parseBoolean(extras.getString("success")));
         Log.d("N",extras.getString("message"));
-        /*
 
-        String title = extras.getString("title");
-        String type=extras.getString("type");
-        String studentID = extras.getString("studentid");
-        int id = Integer.parseInt(extras.getString("id"));
+
+        String message = extras.getString("message");
+
+        buildNotification(message);
+
 
        /*buildNotification(title,type,studentID,id);
         for (String key : extras.keySet()) {
@@ -43,51 +49,30 @@ public class GcmMessageHandler extends IntentService {
         GcmBroadcastReceiver.completeWakefulIntent(intent);
     }
 
-    public void buildNotification(String title,String type,String studentID,int id){
+    public void buildNotification(String message){
         
-        /*mNotificationManager = (NotificationManager)
+        mNotificationManager = (NotificationManager)
                 this.getSystemService(Context.NOTIFICATION_SERVICE);
         Intent i=new Intent(this, LoginActivity.class);
         //i.putExtra("EVENT","1");
         i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
-        i.putExtra("notsid", studentID);
-        i.putExtra("id", id);
-        i.setData(Uri.parse(studentID+type+id));
-        Log.d("HANDLER", studentID);
         
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
-        /*NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.drawable.i1)
-                        .setColor(getResources().getColor(R.color.theme_blue))
-                        .setContentTitle(type)
-                        .setContentText(title)
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("Notification")
+                        .setContentText(message)
                         .setAutoCancel(true)
                         .setDefaults(Notification.DEFAULT_ALL)
                         .setPriority(Notification.PRIORITY_MAX); // requires VIBRATE permission
         Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         mBuilder.setSound(alarmSound);
 
-        NotificationCompat.InboxStyle inboxStyle =
-                new NotificationCompat.InboxStyle();
-
-        inboxStyle.setBigContentTitle(type);
-        inboxStyle.addLine(title);
-        try {
-            SharedPreferences sp = getSharedPreferences(FILE_PERSONAL + studentID, 0);
-            JSONObject jsonObject = new JSONObject(sp.getString("personal-details", null));
-            String name = jsonObject.getString("firstname")+" "+jsonObject.getString("middlename")+" "+jsonObject.getString("lastname");
-            inboxStyle.setSummaryText(name);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        mBuilder.setStyle(inboxStyle);
-
         mBuilder.setContentIntent(contentIntent);
         mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
-        incrementNOTID();*/
+        incrementNOTID();
 
     }
 
