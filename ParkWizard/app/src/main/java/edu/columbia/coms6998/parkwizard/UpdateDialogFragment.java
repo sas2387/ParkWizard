@@ -29,12 +29,12 @@ public class UpdateDialogFragment extends DialogFragment {
         // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
         view = inflater.inflate(R.layout.dialog_reportparking, null);
-        etAvailable = (EditText)view.findViewById(R.id.etSpots);
+        etAvailable = (EditText) view.findViewById(R.id.etSpots);
         etAvailable.setHint("Available Spots");
-        etLocation = (EditText)view.findViewById(R.id.etLocation);
+        etLocation = (EditText) view.findViewById(R.id.etLocation);
         etLocation.setVisibility(View.GONE);
-        btCancel = (Button)view.findViewById(R.id.btCancel);
-        btSubmit = (Button)view.findViewById(R.id.btSubmit);
+        btCancel = (Button) view.findViewById(R.id.btCancel);
+        btSubmit = (Button) view.findViewById(R.id.btSubmit);
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
         builder.setView(view);
@@ -48,11 +48,11 @@ public class UpdateDialogFragment extends DialogFragment {
         btSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(etAvailable.getText().toString().isEmpty()){
-                    Toast.makeText(getActivity(), "Please enter valid data",Toast.LENGTH_SHORT).show();
+                if (etAvailable.getText().toString().isEmpty()) {
+                    Toast.makeText(getActivity(), "Please enter valid data", Toast.LENGTH_SHORT).show();
                 } else {
                     int available = Integer.parseInt(etAvailable.getText().toString());
-                    targetFragment.onDialogPositiveClick(UpdateDialogFragment.this,available);
+                    targetFragment.onDialogPositiveClick(UpdateDialogFragment.this, available);
                 }
             }
         });

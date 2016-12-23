@@ -1,23 +1,29 @@
 package edu.columbia.coms6998.parkwizard;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,102 +34,146 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 /**
  * Created by Siddharth on 11/21/2016.
  */
-public class LoginActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
+public class LoginActivity extends AppCompatActivity implements FacebookCallback<LoginResult> {
 
     private static final String TAG = "LoginActivity";
-    private static final int RC_SIGN_IN = 9001;
-    GoogleApiClient mGoogleApiClient;
-    SignInButton signInButton;
-    final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 201;
-    String name;
-    String email;
-    String userID;
+    final int MY_PERMISSIONS_REQUEST_INTERNET = 201;
 
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
+    CallbackManager callbackManager;
+    LoginButton loginButton;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FacebookSdk.sdkInitialize(getApplicationContext());
         setContentView(R.layout.activity_login);
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("494925756460-u3jofjt7nn57pnb612vjnq4rgo29ocgi.apps.googleusercontent.com")
-                .requestEmail()
-                .build();
-
-        // Build a GoogleApiClient with access to the Google Sign-In API and the
-// options specified by gso.
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
-                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-                .build();
-        signInButton = (SignInButton) findViewById(R.id.sign_in_button);
-        signInButton.setOnClickListener(new View.OnClickListener() {
+        AppEventsLogger.activateApp(this);
+        callbackManager = CallbackManager.Factory.create();
+        loginButton = (LoginButton) findViewById(R.id.login_button);
+        loginButton.setReadPermissions(Arrays.asList("public_profile"));
+        loginButton.setReadPermissions("email");
+        loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
-            public void onClick(View view) {
-                signIn(null);
+            public void onSuccess(LoginResult loginResult) {
+                Log.d("SUCCESS", "SUCCESS");
+                GraphRequest request = GraphRequest.newMeRequest(
+                        loginResult.getAccessToken(),
+                        new GraphRequest.GraphJSONObjectCallback() {
+                            @Override
+                            public void onCompleted(JSONObject object, GraphResponse response) {
+                                Log.v("LoginActivity", response.toString());
+                                try {
+                                    // Application code
+                                    String name = object.getString("name");
+                                    String userid = object.getString("id");
+                                    SharedPreferences sp = getSharedPreferences("USER_PROFILE", MODE_PRIVATE);
+                                    sp.edit().putString("name", name).putString("userid", userid).commit();
+                                    sendToBackEnd(name, userid);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                request.executeAsync();
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
             }
         });
-    }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-        /*SharedPreferences sp = getSharedPreferences("USER_PROFILE",MODE_PRIVATE);
-        String userid = sp.getString("userid",null);
-        if(userid != null) {
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            startActivity(intent);
-        }*/
-    }
+        callbackManager = CallbackManager.Factory.create();
 
-    public void signIn(View v) {
-        Log.d("TAG","sign called");
-        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-        startActivityForResult(signInIntent, RC_SIGN_IN);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG,"in result");
-        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            String token = result.getSignInAccount().getIdToken();
-            Log.d("TOKEN",token);
-            handleSignInResult(result);
+        AccessToken accessToken = AccessToken.getCurrentAccessToken();
+        if(accessToken != null){
+            LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile"));
+            LoginManager.getInstance().registerCallback(callbackManager, this);
         }
-    }
 
-    private void handleSignInResult(GoogleSignInResult result) {
-        Log.d(TAG, "handleSignInResult:" + result.isSuccess());
-        if (result.isSuccess()) {
-            // Signed in successfully, show authenticated UI.
-            GoogleSignInAccount acct = result.getSignInAccount();
-            email = acct.getEmail();
-            name = acct.getDisplayName();
-            userID = acct.getId();
-            sendToBackEnd(name, email, userID);
-            //mStatusTextView.setText(getString(R.string.signed_in_fmt, acct.getDisplayName()));
-            //updateUI(true);
+        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET},
+                    MY_PERMISSIONS_REQUEST_INTERNET);
         } else {
-            // Signed out, show unauthenticated UI.
-            //updateUI(false);
+
         }
     }
 
-    void sendToBackEnd(final String name, final String email, final String userID){
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_INTERNET: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile"));
+                } else {
+                    //Log.d(TAG, "Permission not granted");
+                }
+                return;
+            }
 
-        new AsyncTask<Void,Void,String>() {
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+    @Override
+    public void onSuccess(LoginResult loginResult) {
+        Log.d("SUCCESS", "SUCCESS");
+        GraphRequest request = GraphRequest.newMeRequest(
+                loginResult.getAccessToken(),
+                new GraphRequest.GraphJSONObjectCallback() {
+                    @Override
+                    public void onCompleted(JSONObject object, GraphResponse response) {
+                        Log.v("LoginActivity", response.toString());
+                        try {
+                            // Application code
+                            String name = object.getString("name");
+                            String userid = object.getString("id");
+                            SharedPreferences sp = getSharedPreferences("USER_PROFILE", MODE_PRIVATE);
+                            sp.edit().putString("name", name).putString("userid", userid).commit();
+                            sendToBackEnd(name, userid);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+        request.executeAsync();
+
+    }
+
+    @Override
+    public void onCancel() {
+
+    }
+
+    @Override
+    public void onError(FacebookException error) {
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+    void sendToBackEnd(final String name, final String userID) {
+
+        new AsyncTask<Void, Void, String>() {
 
             @Override
             protected String doInBackground(Void... voids) {
@@ -134,7 +184,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 try {
                     String searchpageurl = getString(R.string.adduserurl);
                     //call to backend
-                    String parameters = "id="+userID+"&name="+name;
+                    String parameters = "id=" + userID + "&name=" + name;
                     URL url = new URL(searchpageurl);
                     HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -155,13 +205,13 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                         response.append(inputLine);
                     }
                     in.close();
-                }catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
-                if(responseCode == 200) {
+                if (responseCode == 200) {
                     return response.toString();
-                }else {
+                } else {
                     return "";
                 }
 
@@ -169,23 +219,21 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
 
             @Override
             protected void onPostExecute(String response) {
+                Log.d("START", "MAIN");
+
                 //handle backend response
-                Log.d("LOGIN RESPONSE",response);
+                Log.d("LOGIN RESPONSE", response);
                 try {
                     JSONObject jsonObject = new JSONObject(response);
                     boolean login = jsonObject.getBoolean("success");
 
                     if (login) {
-                        //save to config file
-                        SharedPreferences sp =getSharedPreferences("USER_PROFILE",MODE_PRIVATE);
-                        sp.edit().putString("userid",userID).putString("name",name).putString("email",email).commit();
-
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);
                         // move to new screen
                     } else {
                         // same activity
-                        Toast.makeText(LoginActivity.this, "Sign In Failed" , Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Sign In Failed", Toast.LENGTH_SHORT).show();
                     }
                 } catch (JSONException ex) {
                     ex.printStackTrace();
