@@ -13,10 +13,12 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -50,7 +52,7 @@ import java.util.HashMap;
 /**
  * Created by Siddharth on 11/21/2016.
  */
-public class AvailableParkingActivity extends FragmentActivity implements GoogleMap.OnMarkerClickListener {
+public class AvailableParkingActivity extends AppCompatActivity implements GoogleMap.OnMarkerClickListener {
 
     LatLng destLatLng;
     MapView mMapView;
@@ -72,13 +74,30 @@ public class AvailableParkingActivity extends FragmentActivity implements Google
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_availableparking);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitle("Available Parking Spots");
+        setSupportActionBar(toolbar);
         mMapView = (MapView) findViewById(R.id.parkingMapView);
         mMapView.onCreate(savedInstanceState);
+
+        getSupportActionBar().setHomeButtonEnabled(true);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case android.R.id.home:
+                // ProjectsActivity is my 'home' activity
+                finish();
+                return true;
+        }
+        return (super.onOptionsItemSelected(menuItem));
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        setTitle("Available Parking Spots");
         btUsingThis = (Button) findViewById(R.id.btUsingThis);
         destLatLng = getIntent().getParcelableExtra("destLatLng");
         mMapView.onResume(); // needed to get the map to display immediately
@@ -111,6 +130,7 @@ public class AvailableParkingActivity extends FragmentActivity implements Google
             @Override
             public void onMapReady(GoogleMap mMap) {
                 googleMap = mMap;
+                googleMap.getUiSettings().setMapToolbarEnabled(false);
                 loadParkingLocations(destLatLng);
 
                 mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
@@ -232,7 +252,7 @@ public class AvailableParkingActivity extends FragmentActivity implements Google
 
                         markerInfos.put(marker,information);
                     }
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(destLatLng, 13));
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(destLatLng, 18));
                     if (ContextCompat.checkSelfPermission(AvailableParkingActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                             && ContextCompat.checkSelfPermission(AvailableParkingActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 

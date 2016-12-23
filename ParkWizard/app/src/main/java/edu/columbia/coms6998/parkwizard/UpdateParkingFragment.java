@@ -10,6 +10,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -23,6 +24,13 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.google.gson.Gson;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -30,7 +38,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by Siddharth on 12/22/2016.
@@ -44,11 +54,14 @@ public class UpdateParkingFragment extends Fragment {
     final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 201;
     ArrayList<Info> parkingLocationInfos = new ArrayList<>();
     boolean loaded = false;
+    private static String PROPERTY_REG_ID = "registration_id";
+    CognitoCachingCredentialsProvider credentialsProvider;
+    CustomAdapter adapter;
 
     int selectedPosition = -1;
 
-    class Info{
-        String id;
+    class Info {
+        String locid;
         String name;
         int available;
     }
@@ -67,17 +80,48 @@ public class UpdateParkingFragment extends Fragment {
     public void onStart() {
         super.onStart();
         getUserLocation();
-        if(!loaded) {
+        credentialsProvider = new CognitoCachingCredentialsProvider(
+                getActivity().getApplicationContext(),
+                "us-east-1:23ace8aa-c8e6-4a67-ae5c-3e463343d6e6", // Identity Pool ID
+                Regions.US_EAST_1 // Region
+        );
+        if (!loaded) {
             if (userLocation != null) {
                 loadParkingLocations();
             } else {
                 Toast.makeText(getActivity(), "We need your location", Toast.LENGTH_SHORT).show();
             }
-            loaded=true;
+            loaded = true;
+        }
+        updateBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                updateLocationData();
+            }
+        });
+    }
+
+    void updateLocationData() {
+        SharedPreferences sp1 = getActivity().getSharedPreferences("USER_PROFILE", Context.MODE_PRIVATE);
+        String userid = sp1.getString("userid", "");
+        SharedPreferences sp2 = getActivity().getSharedPreferences("updates_" + userid, Context.MODE_PRIVATE);
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+        int times = sp2.getInt(sdf.format(new Date()), 0);
+        Log.d("TIMES", "" + times);
+        if (times > 4) {
+            Toast.makeText(getActivity(), "You can submit only 5 updates per day", Toast.LENGTH_SHORT).show();
+            selectedPosition=-1;
+            adapter.notifyDataSetChanged();
+            return;
+        }
+        if (selectedPosition != -1) {
+            DialogFragment newFragment = new UpdateDialogFragment();
+            newFragment.setTargetFragment(UpdateParkingFragment.this, 200);
+            newFragment.show(getFragmentManager(), "update");
         }
     }
 
-    void getUserLocation(){
+    void getUserLocation() {
         if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
@@ -114,9 +158,9 @@ public class UpdateParkingFragment extends Fragment {
     }
 
 
-    void loadParkingLocations(){
+    void loadParkingLocations() {
 
-        new AsyncTask<Void, Void, String>(){
+        new AsyncTask<Void, Void, String>() {
             @Override
             protected String doInBackground(Void... voids) {
 
@@ -158,29 +202,29 @@ public class UpdateParkingFragment extends Fragment {
             protected void onPostExecute(String s) {
                 super.onPostExecute(s);
                 //update recyclerview
-                Log.d("JSON",s);
+                Log.d("JSON", s);
                 try {
                     JSONObject jsonObject = new JSONObject(s);
                     JSONArray jsonArray = jsonObject.getJSONArray("parkings");
 
-                    if(jsonArray.length() == 0){
-                       Toast.makeText(getActivity().getApplicationContext(), jsonObject.getString("message"),Toast.LENGTH_SHORT).show();
+                    if (jsonArray.length() == 0) {
+                        Toast.makeText(getActivity().getApplicationContext(), jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
                     }
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject outerjo = jsonArray.getJSONObject(i);
                         JSONObject innerjo = outerjo.getJSONObject("location");
                         //LatLng latLng = new LatLng(innerjo.getDouble("lat"), innerjo.getDouble("lon"));
-                        String  id = outerjo.getString("locid");
+                        String id = outerjo.getString("locid");
                         String name = outerjo.getString("name");
 
                         UpdateParkingFragment.Info information = new Info();
                         information.name = name;
-                        information.id = id;
+                        information.locid = id;
                         parkingLocationInfos.add(information);
                     }
 
-                    final CustomAdapter adapter = new CustomAdapter(getActivity(), R.layout.card_parking);
+                    adapter = new CustomAdapter(getActivity(), R.layout.card_parking);
                     listView.setAdapter(adapter);
                     listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                         @Override
@@ -190,7 +234,7 @@ public class UpdateParkingFragment extends Fragment {
                         }
                     });
 
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -239,18 +283,77 @@ public class UpdateParkingFragment extends Fragment {
                 return view;
             }
             Info item = parkingLocationInfos.get(position);
-            TextView tv = (TextView)view.findViewById(R.id.tv_parking);
+            TextView tv = (TextView) view.findViewById(R.id.tv_parking);
             tv.setText(item.name);
             view.setClickable(false);
-            if(position == selectedPosition){
-                view.setBackgroundColor(Color.BLUE);
-            } else{
+            if (position == selectedPosition) {
+                view.setBackgroundColor(Color.parseColor("#2B60DE"));
+                tv.setTextColor(Color.WHITE);
+            } else {
                 view.setBackgroundColor(Color.WHITE);
+                tv.setTextColor(Color.BLACK);
             }
 
             return view;
         }
     }
 
+    public void onDialogPositiveClick(DialogFragment dialog, final int available) {
+        dialog.getDialog().dismiss();
 
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                //get data and send to sqs
+                AmazonSQSClient sqs = new AmazonSQSClient(credentialsProvider);
+                Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+                sqs.setRegion(usEast1);
+                String queueUrl = sqs.listQueues("parkinglocations").getQueueUrls().get(0);
+
+                SharedPreferences sp = getActivity().getSharedPreferences("USER_PROFILE", Context.MODE_PRIVATE);
+                String userid = sp.getString("userid", "");
+                SharedPreferences gcmprefs = getActivity().getSharedPreferences("GCM", Context.MODE_PRIVATE);
+                String regid = gcmprefs.getString(PROPERTY_REG_ID, "");
+
+                ParkingLocation pl = new ParkingLocation();
+                pl.id = userid;
+                pl.locid = parkingLocationInfos.get(selectedPosition).locid;
+                pl.type = "update";
+                pl.available = available;
+                pl.regid = regid;
+                try {
+                    Gson gson = new Gson();
+                    String jsonInString = gson.toJson(pl);
+                    sqs.sendMessage(new SendMessageRequest(queueUrl, jsonInString));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+
+                selectedPosition = -1;
+                adapter.notifyDataSetChanged();
+                Toast.makeText(getActivity(), "Parking Updated", Toast.LENGTH_SHORT).show();
+                SharedPreferences sp1 = getActivity().getSharedPreferences("USER_PROFILE", Context.MODE_PRIVATE);
+                String userid = sp1.getString("userid", "");
+                SharedPreferences sp2 = getActivity().getSharedPreferences("updates_" + userid, Context.MODE_PRIVATE);
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+                String today = sdf.format(new Date());
+                if (!sp2.contains(today)) {
+                    sp2.edit().clear().putInt(today, 1).commit();
+                } else {
+                    int times = sp2.getInt(today, 0);
+                    sp2.edit().putInt(today, ++times).commit();
+                }
+            }
+        }.execute();
+    }
+
+    public void onDialogNegativeClick(DialogFragment dialog) {
+        dialog.getDialog().dismiss();
+    }
 }

@@ -9,6 +9,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
@@ -19,7 +20,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -28,8 +28,13 @@ import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
@@ -43,7 +48,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,GoogleApiClient.OnConnectionFailedListener {
 
     final String TAG = "MainActivity";
     View headerView;
@@ -56,6 +61,8 @@ public class MainActivity extends AppCompatActivity
     private static String PROPERTY_REG_ID = "registration_id";
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+
+    GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,11 +80,23 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         headerView = navigationView.getHeaderView(0);
+
+        onNavigationItemSelected(navigationView.getMenu().getItem(0));
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+
+        mGoogleApiClient.connect();
         tvName = (TextView) headerView.findViewById(R.id.tvName);
         tvEmail = (TextView) headerView.findViewById(R.id.tvEmail);
         tvPoints = (TextView) headerView.findViewById(R.id.tvPoints);
@@ -231,25 +250,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -260,16 +262,30 @@ public class MainActivity extends AppCompatActivity
         FragmentManager fm = getSupportFragmentManager();
         if (id == R.id.search_parking) {
             Log.d(TAG, "SEARCH PARKING");
+            setTitle("Search Parking Location");
             SearchParkingFragment searchParkingFragment = new SearchParkingFragment();
             fm.beginTransaction().replace(R.id.content_view, searchParkingFragment).commit();
         } else if (id == R.id.report_parking) {
             Log.d(TAG, "ADD PARKING");
+            setTitle("Report Parking Location");
             ReportParkingFragment reportParkingFragment = new ReportParkingFragment();
             fm.beginTransaction().replace(R.id.content_view, reportParkingFragment).commit();
         } else if(id == R.id.update_parking_menu) {
             Log.d(TAG, "UPDATE PARKING");
+            setTitle("Update Parking Location");
             UpdateParkingFragment updateParkingFragment = new UpdateParkingFragment();
             fm.beginTransaction().replace(R.id.content_view, updateParkingFragment).commit();
+        } else if(id == R.id.signout_menu) {
+
+            Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+                    new ResultCallback<Status>() {
+                        @Override
+                        public void onResult(Status status) {
+                            SharedPreferences sp = getSharedPreferences("USER_PROFILE",MODE_PRIVATE);
+                            sp.edit().clear().commit();
+                            finish();
+                        }
+                    });
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -344,8 +360,6 @@ public class MainActivity extends AppCompatActivity
             // permissions this app might request
         }
     }
-
-
 
     private void updatePoints(final String userid) {
 

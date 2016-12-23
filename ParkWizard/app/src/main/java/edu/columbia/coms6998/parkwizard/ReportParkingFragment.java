@@ -119,7 +119,7 @@ public class ReportParkingFragment extends Fragment{
                     Criteria criteria = new Criteria();
                     userLocation = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
                     if (userLocation != null) {
-                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(userLocation.getLatitude(), userLocation.getLongitude()), 15));
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(userLocation.getLatitude(), userLocation.getLongitude()), 18));
                     }
                 }
             }

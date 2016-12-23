@@ -67,6 +67,7 @@ public class SearchParkingFragment extends Fragment {
             @Override
             public void onMapReady(GoogleMap mMap) {
                 googleMap = mMap;
+                googleMap.getUiSettings().setMapToolbarEnabled(false);
 
                 // For showing a move to my location button
                 if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -80,7 +81,7 @@ public class SearchParkingFragment extends Fragment {
                     Criteria criteria = new Criteria();
                     userLocation = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
                     if (userLocation != null) {
-                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(userLocation.getLatitude(), userLocation.getLongitude()), 13));
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(userLocation.getLatitude(), userLocation.getLongitude()), 18));
                     }
                 }
             }
@@ -141,7 +142,7 @@ public class SearchParkingFragment extends Fragment {
             public void onClick(View view) {
                 if (destLatLng != null) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                    builder.setMessage("This will deduct 1 point from your account");
+                    builder.setMessage("This will deduct 5 point from your account");
                     // Add the buttons
                     builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {

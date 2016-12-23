@@ -72,6 +72,18 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         });
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+        SharedPreferences sp = getSharedPreferences("USER_PROFILE",MODE_PRIVATE);
+        String userid = sp.getString("userid",null);
+        if(userid != null) {
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            startActivity(intent);
+        }
+    }
+
     public void signIn(View v) {
         Log.d("TAG","sign called");
         Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
