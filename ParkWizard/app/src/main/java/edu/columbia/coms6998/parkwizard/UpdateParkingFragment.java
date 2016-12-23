@@ -29,6 +29,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.facebook.AccessToken;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
@@ -41,6 +42,8 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Siddharth on 12/22/2016.
@@ -72,7 +75,16 @@ public class UpdateParkingFragment extends Fragment {
         listView = (ListView) rootView.findViewById(R.id.lvParkingLocations);
         updateBtn = (Button) rootView.findViewById(R.id.btnUpdate);
 
-        // specify an adapter (see also next example)
+        credentialsProvider = new CognitoCachingCredentialsProvider(
+                getActivity().getApplicationContext(),
+                "us-east-1:23ace8aa-c8e6-4a67-ae5c-3e463343d6e6", // Identity Pool ID
+                Regions.US_EAST_1 // Region
+        );
+
+        Map<String, String> logins = new HashMap<String, String>();
+        logins.put("graph.facebook.com", AccessToken.getCurrentAccessToken().getToken());
+        credentialsProvider.setLogins(logins);
+
         return rootView;
     }
 
@@ -80,11 +92,6 @@ public class UpdateParkingFragment extends Fragment {
     public void onStart() {
         super.onStart();
         getUserLocation();
-        credentialsProvider = new CognitoCachingCredentialsProvider(
-                getActivity().getApplicationContext(),
-                "us-east-1:23ace8aa-c8e6-4a67-ae5c-3e463343d6e6", // Identity Pool ID
-                Regions.US_EAST_1 // Region
-        );
         if (!loaded) {
             if (userLocation != null) {
                 loadParkingLocations();
@@ -110,7 +117,7 @@ public class UpdateParkingFragment extends Fragment {
         Log.d("TIMES", "" + times);
         if (times > 4) {
             Toast.makeText(getActivity(), "You can submit only 5 updates per day", Toast.LENGTH_SHORT).show();
-            selectedPosition=-1;
+            selectedPosition = -1;
             adapter.notifyDataSetChanged();
             return;
         }

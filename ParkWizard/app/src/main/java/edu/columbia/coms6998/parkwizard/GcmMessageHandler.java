@@ -14,15 +14,15 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 public class GcmMessageHandler extends IntentService {
-	
-	public static int NOTIFICATION_ID = 1;
+
+    public static int NOTIFICATION_ID = 1;
     private NotificationManager mNotificationManager;
-    String FILE_PERSONAL="PersonalDetails";
-     
+    String FILE_PERSONAL = "PersonalDetails";
+
     public GcmMessageHandler() {
         super("GcmMessageHandler");
     }
-   
+
     @Override
     protected void onHandleIntent(Intent intent) {
         Bundle extras = intent.getExtras();
@@ -31,8 +31,8 @@ public class GcmMessageHandler extends IntentService {
         // in your BroadcastReceiver.
 
         Log.d("NOTIFICATION", "Obtained");
-        Log.d("N",""+Boolean.parseBoolean(extras.getString("success")));
-        Log.d("N",extras.getString("message"));
+        Log.d("N", "" + Boolean.parseBoolean(extras.getString("success")));
+        Log.d("N", extras.getString("message"));
 
 
         String message = extras.getString("message");
@@ -49,24 +49,24 @@ public class GcmMessageHandler extends IntentService {
         GcmBroadcastReceiver.completeWakefulIntent(intent);
     }
 
-    public void buildNotification(String message){
-        
+    public void buildNotification(String message) {
+
         mNotificationManager = (NotificationManager)
                 this.getSystemService(Context.NOTIFICATION_SERVICE);
-        Intent i=new Intent(this, LoginActivity.class);
+        Intent i = new Intent(this, LoginActivity.class);
         //i.putExtra("EVENT","1");
         i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        
+
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.mipmap.ic_launcher)
-                        .setContentTitle("Notification")
-                        .setContentText(message)
-                        .setAutoCancel(true)
-                        .setDefaults(Notification.DEFAULT_ALL)
-                        .setPriority(Notification.PRIORITY_MAX); // requires VIBRATE permission
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("Notification")
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setPriority(Notification.PRIORITY_MAX); // requires VIBRATE permission
         Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         mBuilder.setSound(alarmSound);
 
@@ -76,7 +76,7 @@ public class GcmMessageHandler extends IntentService {
 
     }
 
-    synchronized public void incrementNOTID(){
+    synchronized public void incrementNOTID() {
         NOTIFICATION_ID++;
     }
 }

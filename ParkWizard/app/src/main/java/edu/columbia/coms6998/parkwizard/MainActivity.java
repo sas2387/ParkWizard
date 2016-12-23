@@ -1,10 +1,7 @@
 package edu.columbia.coms6998.parkwizard;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -12,9 +9,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -25,18 +20,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import com.amazonaws.auth.CognitoCachingCredentialsProvider;
-import com.amazonaws.regions.Regions;
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.facebook.login.LoginManager;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
@@ -46,16 +33,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener,GoogleApiClient.OnConnectionFailedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener {
 
     final String TAG = "MainActivity";
     View headerView;
-    TextView tvName, tvEmail, tvPoints;
-    final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS=201;
+    TextView tvName, tvPoints;
     private String SENDER_ID = "494925756460";
     private String regid;
     SharedPreferences gcmprefs;
@@ -63,8 +47,6 @@ public class MainActivity extends AppCompatActivity
     private static String PROPERTY_REG_ID = "registration_id";
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-    private static final int RC_SIGN_IN = 9001;
-    GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,49 +67,35 @@ public class MainActivity extends AppCompatActivity
         headerView = navigationView.getHeaderView(0);
 
         onNavigationItemSelected(navigationView.getMenu().getItem(0));
-
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .requestIdToken("494925756460-u3jofjt7nn57pnb612vjnq4rgo29ocgi.apps.googleusercontent.com")
-                .build();
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
-                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-                .build();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-
-        mGoogleApiClient.connect();
         tvName = (TextView) headerView.findViewById(R.id.tvName);
-        tvEmail = (TextView) headerView.findViewById(R.id.tvEmail);
         tvPoints = (TextView) headerView.findViewById(R.id.tvPoints);
 
         SharedPreferences sp = getSharedPreferences("USER_PROFILE", MODE_PRIVATE);
         tvName.setText(sp.getString("name", ""));
-        tvEmail.setText(sp.getString("email", ""));
 
         updatePoints(sp.getString("userid", ""));
-        createAWSCredentials();
         doGCMStuff();
     }
 
     void doGCMStuff() {
-        gcmprefs = getSharedPreferences("GCM",MODE_PRIVATE);
+        gcmprefs = getSharedPreferences("GCM", MODE_PRIVATE);
 
         if (checkPlayServices()) {
             gcm = GoogleCloudMessaging.getInstance(this);
             regid = getRegistrationId();
-            Log.d("STORED REGID",regid);
+            Log.d("STORED REGID", regid);
             if (regid.isEmpty()) {
                 if (ConnectionDetector.checkConnection(this)) {
                     registerInBackground();
                 }
             }
-        }else{
-            Log.d("GCM","NO PLAY SERVICES");
+        } else {
+            Log.d("GCM", "NO PLAY SERVICES");
         }
     }
 
@@ -180,9 +148,10 @@ public class MainActivity extends AppCompatActivity
 
     private void registerInBackground() {
 
-        new AsyncTask<Void,Void,String>() {
+        new AsyncTask<Void, Void, String>() {
 
             private ProgressDialog pDialog;
+
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
@@ -202,7 +171,7 @@ public class MainActivity extends AppCompatActivity
                         gcm = GoogleCloudMessaging.getInstance(getBaseContext());
                     }
                     regid = gcm.register(SENDER_ID);
-                    msg = "Device registered, registration ID=" + regid+"\n";
+                    msg = "Device registered, registration ID=" + regid + "\n";
                     // You should send the registration ID to your server over HTTP,
                     // so it can use GCM/HTTP or CCS to send messages to your app.
                     // The request to your server should be authenticated if your app
@@ -229,7 +198,7 @@ public class MainActivity extends AppCompatActivity
             protected void onPostExecute(String result) {
                 super.onPostExecute(result);
                 pDialog.dismiss();
-                Log.d("GOT FROM GOOGLE REGID",regid);
+                Log.d("GOT FROM GOOGLE REGID", regid);
             }
         }.execute();
     }
@@ -274,105 +243,21 @@ public class MainActivity extends AppCompatActivity
             setTitle("Report Parking Location");
             ReportParkingFragment reportParkingFragment = new ReportParkingFragment();
             fm.beginTransaction().replace(R.id.content_view, reportParkingFragment).commit();
-        } else if(id == R.id.update_parking_menu) {
+        } else if (id == R.id.update_parking_menu) {
             Log.d(TAG, "UPDATE PARKING");
             setTitle("Update Parking Location");
             UpdateParkingFragment updateParkingFragment = new UpdateParkingFragment();
             fm.beginTransaction().replace(R.id.content_view, updateParkingFragment).commit();
-        } else if(id == R.id.signout_menu) {
-
-            Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
-                    new ResultCallback<Status>() {
-                        @Override
-                        public void onResult(Status status) {
-                            SharedPreferences sp = getSharedPreferences("USER_PROFILE",MODE_PRIVATE);
-                            sp.edit().clear().commit();
-                            finish();
-                        }
-                    });
+        } else if (id == R.id.signout_menu) {
+            LoginManager.getInstance().logOut();
+            SharedPreferences sp = getSharedPreferences("USER_PROFILE", MODE_PRIVATE);
+            sp.edit().clear().commit();
+            finish();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG,"in result");
-        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            String token = result.getSignInAccount().getIdToken();
-
-            new AsyncTask<Void, Void, Void>(){
-                @Override
-                protected Void doInBackground(Void... voids) {
-                    Log.d("COGNITO","Getting credentials");
-                    CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
-                            getApplicationContext(),
-                            "us-east-1:23ace8aa-c8e6-4a67-ae5c-3e463343d6e6", // Identity Pool ID
-                            Regions.US_EAST_1 // Region
-                    );
-
-                    if (ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.GET_ACCOUNTS)
-                            != PackageManager.PERMISSION_GRANTED ){
-                        ActivityCompat.requestPermissions(MainActivity.this,
-                                new String[]{android.Manifest.permission.GET_ACCOUNTS},
-                                MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
-                    } else {
-                        try {
-                            Map<String, String> logins = new HashMap<String, String>();
-                            logins.put("accounts.google.com", token);
-                            Log.d(TAG, logins.toString());
-                            credentialsProvider.setLogins(logins);
-                            Log.d("COGNITO","Stored:"+credentialsProvider.getLogins().toString());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (GoogleAuthException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    return null;
-                }
-            }.execute();
-        }
-    }
-
-    void createAWSCredentials() {
-        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-        startActivityForResult(signInIntent, RC_SIGN_IN);
-
-
-
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_GET_ACCOUNTS: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.GET_ACCOUNTS)
-                            != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(MainActivity.this,
-                                new String[]{android.Manifest.permission.GET_ACCOUNTS},
-                                MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
-                    } else {
-                        createAWSCredentials();
-                    }
-                } else {
-                    //Log.d(TAG, "Permission not granted");
-                }
-                return;
-            }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
-        }
     }
 
     private void updatePoints(final String userid) {

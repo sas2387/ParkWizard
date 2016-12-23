@@ -25,6 +25,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.facebook.AccessToken;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -34,31 +35,28 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Siddharth on 12/21/2016.
  */
 
-public class ReportParkingFragment extends Fragment{
+public class ReportParkingFragment extends Fragment {
 
     Button addParkingButton;
     MapView mMapView;
     private GoogleMap googleMap;
-    int PLACE_AUTOCOMPLETE_REQUEST_CODE = 1;
-    final int RESULT_OK = -1;
-    final int RESULT_CANCEL = 0;
     final String TAG = "ReportParkingFragment";
     Location userLocation;
     final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 201;
-    final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 202;
     private static String PROPERTY_REG_ID = "registration_id";
     LatLng selectedLatLng;
     CognitoCachingCredentialsProvider credentialsProvider;
 
     @Override
     public View onCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle) {
-        Log.d("DEBUG","oncreate called");
         View rootView = layoutInflater.inflate(R.layout.fragment_reportparking, viewGroup, false);
         addParkingButton = (Button) rootView.findViewById(R.id.btAddParking);
         mMapView = (MapView) rootView.findViewById(R.id.mapView);
@@ -76,23 +74,24 @@ public class ReportParkingFragment extends Fragment{
             @Override
             public void onMapReady(GoogleMap mMap) {
                 googleMap = mMap;
+                googleMap.getUiSettings().setMapToolbarEnabled(false);
 
                 googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
 
                     @Override
                     public void onMapClick(LatLng latLng) {
-                        Log.d(TAG,latLng.toString());
+                        Log.d(TAG, latLng.toString());
                         // TODO Auto-generated method stub
-                        String address=null;
+                        String address = null;
                         try {
                             //fetch corresponding address
                             Geocoder geoCoder = new Geocoder(getActivity());
                             List<Address> matches = geoCoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
                             Address bestMatch = (matches.isEmpty() ? null : matches.get(0));
-                            if(bestMatch != null) {
+                            if (bestMatch != null) {
                                 address = bestMatch.getThoroughfare();
                             }
-                        }catch (Exception e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                         //remove all markers
@@ -125,38 +124,70 @@ public class ReportParkingFragment extends Fragment{
             }
         });
 
-        return rootView;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        Log.d("COGNITO","Cached credentials should be present");
+        Log.d("COGNITO", "Cached credentials should be present");
         credentialsProvider = new CognitoCachingCredentialsProvider(
                 getActivity().getApplicationContext(),
                 "us-east-1:23ace8aa-c8e6-4a67-ae5c-3e463343d6e6", // Identity Pool ID
                 Regions.US_EAST_1 // Region
         );
 
+        Map<String, String> logins = new HashMap<String, String>();
+        logins.put("graph.facebook.com", AccessToken.getCurrentAccessToken().getToken());
+        credentialsProvider.setLogins(logins);
+
+        return rootView;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_ACCESS_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                            && ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    } else {
+                        googleMap.setMyLocationEnabled(true);
+                        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+                        Criteria criteria = new Criteria();
+                        userLocation = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
+                        if (userLocation != null) {
+                            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(userLocation.getLatitude(), userLocation.getLongitude()), 18));
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "Permission not granted");
+                }
+                return;
+            }
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
         addParkingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(selectedLatLng!=null) {
+                if (selectedLatLng != null) {
                     //make a dialog
                     DialogFragment newFragment = new ReportParkingDialogFragment();
-                    newFragment.setTargetFragment(ReportParkingFragment.this,200);
+                    newFragment.setTargetFragment(ReportParkingFragment.this, 200);
                     newFragment.show(getFragmentManager(), "report");
-                }else{
-                    Toast.makeText(getActivity(),"Please select a location",Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getActivity(), "Please select a location", Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
-    public void onDialogPositiveClick(DialogFragment dialog,final String location, final int spots){
+    public void onDialogPositiveClick(DialogFragment dialog, final String location, final int spots) {
         dialog.getDialog().dismiss();
 
-        new AsyncTask<Void, Void, Void>(){
+        new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
                 //get data and send to sqs
@@ -165,9 +196,9 @@ public class ReportParkingFragment extends Fragment{
                 sqs.setRegion(usEast1);
                 String queueUrl = sqs.listQueues("parkinglocations").getQueueUrls().get(0);
 
-                SharedPreferences sp = getActivity().getSharedPreferences("USER_PROFILE",Context.MODE_PRIVATE);
-                String userid = sp.getString("userid","");
-                SharedPreferences gcmprefs = getActivity().getSharedPreferences("GCM",Context.MODE_PRIVATE);
+                SharedPreferences sp = getActivity().getSharedPreferences("USER_PROFILE", Context.MODE_PRIVATE);
+                String userid = sp.getString("userid", "");
+                SharedPreferences gcmprefs = getActivity().getSharedPreferences("GCM", Context.MODE_PRIVATE);
                 String regid = gcmprefs.getString(PROPERTY_REG_ID, "");
 
                 ParkingLocation pl = new ParkingLocation();
@@ -182,7 +213,7 @@ public class ReportParkingFragment extends Fragment{
                     Gson gson = new Gson();
                     String jsonInString = gson.toJson(pl);
                     sqs.sendMessage(new SendMessageRequest(queueUrl, jsonInString));
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 return null;
@@ -191,13 +222,13 @@ public class ReportParkingFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
-                Toast.makeText(getActivity(),"Parking Reported",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "Parking Reported", Toast.LENGTH_SHORT).show();
             }
         }.execute();
 
     }
 
-    public void onDialogNegativeClick(DialogFragment dialog){
+    public void onDialogNegativeClick(DialogFragment dialog) {
         dialog.getDialog().dismiss();
     }
 
