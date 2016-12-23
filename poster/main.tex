@@ -1,0 +1,206 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Jacobs Landscape Poster
+% LaTeX Template
+% Version 1.1 (14/06/14)
+%
+% Created by:
+% Computational Physics and Biophysics Group, Jacobs University
+% https://teamwork.jacobs-university.de:8443/confluence/display/CoPandBiG/LaTeX+Poster
+% 
+% Further modified by:
+% Nathaniel Johnston (nathaniel@njohnston.ca)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[final]{beamer}
+
+\usepackage[scale=1.24]{beamerposter} % Use the beamerposter package for laying out the poster
+
+\usetheme{confposter} % Use the confposter theme supplied with this template
+
+\setbeamercolor{block title}{fg=ngreen,bg=white} % Colors of the block titles
+\setbeamercolor{block body}{fg=black,bg=white} % Colors of the body of blocks
+\setbeamercolor{block alerted title}{fg=white,bg=dblue!70} % Colors of the highlighted block titles
+\setbeamercolor{block alerted body}{fg=black,bg=dblue!10} % Colors of the body of highlighted blocks
+% Many more colors are available for use in beamerthemeconfposter.sty
+
+%-----------------------------------------------------------
+% Define the column widths and overall poster size
+% To set effective sepwid, onecolwid and twocolwid values, first choose how many columns you want and how much separation you want between columns
+% In this template, the separation width chosen is 0.024 of the paper width and a 4-column layout
+% onecolwid should therefore be (1-(# of columns+1)*sepwid)/# of columns e.g. (1-(4+1)*0.024)/4 = 0.22
+% Set twocolwid to be (2*onecolwid)+sepwid = 0.464
+% Set threecolwid to be (3*onecolwid)+2*sepwid = 0.708
+
+\newlength{\sepwid}
+\newlength{\onecolwid}
+\newlength{\twocolwid}
+\newlength{\threecolwid}
+\setlength{\paperwidth}{48in} % A0 width: 46.8in
+\setlength{\paperheight}{36in} % A0 height: 33.1in
+\setlength{\sepwid}{0.01\paperwidth} % Separation width (white space) between columns
+\setlength{\onecolwid}{0.23\paperwidth} % Width of one column
+\setlength{\twocolwid}{0.464\paperwidth} % Width of two columns
+\setlength{\threecolwid}{0.708\paperwidth} % Width of three columns
+\setlength{\topmargin}{-0.9in} % Reduce the top margin size
+%-----------------------------------------------------------
+
+\usepackage{graphicx}  % Required for including images
+
+% \usepackage{booktabs} % Top and bottom rules for tables
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION 
+%----------------------------------------------------------------------------------------
+
+\title{ParkWizard: Street Parking Android App} % Poster title
+
+\author{Siddharth Shah, Kunal Baweja, Dhruv Shekhawat, Anand Naik} % Author(s)
+
+\institute{\mbox{}} % Institution(s)
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\addtobeamertemplate{block end}{}{\vspace*{1ex}} % White space under blocks
+% \addtobeamertemplate{block alerted end}{}{\vspace*{2ex}} % White space under highlighted (alert) blocks
+
+% \setlength{\belowcaptionskip}{2ex} % White space under figures
+% \setlength\belowdisplayshortskip{2ex} % White space under equations
+
+\begin{frame}[t] % The whole poster is enclosed in one beamer frame
+
+\begin{columns}[t] % The whole poster consists of three major columns, the second of which is split into two columns twice - the [t] option aligns each column's content to the top
+
+\begin{column}{\sepwid}\end{column} % Empty spacer column
+
+\begin{column}{\onecolwid} % The first column
+
+%----------------------------------------------------------------------------------------
+%	OBJECTIVES
+%----------------------------------------------------------------------------------------
+
+\begin{alertblock}{Abstract}
+In this project, an android app is built to guide users to the nearest available street parking location. We use web services such as Google Cloud Messaging, Elasticsearch, SQS and Cognito to develop a point-based, crowd-sourced approach that strives to take the hassle out of street parking.
+\end{alertblock}
+
+\begin{block}{Motivation}
+
+Finding open street parking spots in metropolitan cities such as New York has always been a distressing task. Various apps have been developed in the past but with an intention of helping users book garage parking instead of finding available street parking. To mitigate this issue, we have created ParkWizard which employs various cloud services to update users with real-time street parking information.
+\end{block}
+
+%----------------------------------------------------------------------------------------
+%	INTRODUCTION
+%----------------------------------------------------------------------------------------
+
+\begin{block}{Introduction}
+
+ParkWizard is an Android application that helps users find available street parking locations. It works on a crowd-sourced, point-based system where users earn points by reporting street parking locations and are able to use those points in order to obtain available parking spots. This point-based system works well towards maintaining a smooth information flow between users(finders) who want to find available parking spots and those(informers) who have information about them. At a point, any user can act as a finder or an informer. 
+
+
+Users are authenticated using Amazon Cognito which assigns temporary security credentials for accessing our backend AWS resources. The app displays all the available parking spots which are within 500 meters radius from the location where the user wants to find parking. Users are initially granted 100 free points on creating an account with our app. Each time, users lose 5 points on searching a parking and gain 10 points on reporting available parking spots.
+\end{block}
+
+%------------------------------------------------
+
+
+%----------------------------------------------------------------------------------------
+
+\end{column} % End of the first column
+
+\begin{column}{\sepwid}\end{column} % Empty spacer column
+
+\begin{column}{\onecolwid} % The first column
+%----------------------------------------------------------------------------------------
+%	ARCHITECTURE
+%----------------------------------------------------------------------------------------
+
+\begin{block}{Architecture}
+We make use of Google OAuth to facilitate user login through Google account. At the time of login we also utilize AWS Cognito to provide users with temporary security credentials to access our app's backend resources. We have built our backend with Django webserver that communicates with Elasticsearch(ES) to store and retrieve real-time parking information. When users report parking, the information is first enqueued to SQS queue from where it is dequeued by our Django server. This ensures reliable data delivery and efficient handling of load on the server side. 
+
+On receiving the reported parking information, Django server streams it to ES which stores the data in the (lat,long, \#available spots, \#total spots) format. The user information is also stored on ES in the format (userid, points). When searching for parking, Django server retrieves the data from ES based on (lat,long) provided by user and sends it back to the app. We deploy our Django server on a load balanced AWS ElasticBeanstalk. Django server sends notifications about operation's status to Google Cloud Messaging which redirects it to the user's registered device.
+
+
+
+
+\end{block}
+
+%------------------------------------------------
+
+\begin{figure}
+\includegraphics[width=50cm,height=29cm]{architecture_2.JPG}
+\caption{Architecture}
+\end{figure}
+
+%----------------------------------------------------------------------------------------
+
+\end{column} % End of the first column
+
+\begin{column}{\sepwid}\end{column} % Empty spacer column
+
+\begin{column}{\onecolwid} % The first column
+%----------------------------------------------------------------------------------------
+%	ALGORITHM
+%----------------------------------------------------------------------------------------
+
+\begin{block}{Algorithm}
+%------------------------------------------------
+
+\begin{figure}
+\includegraphics[width=28cm,height=35cm]{algorithm.png}
+\caption{App State Transitions}
+\end{figure}
+
+%----------------------------------------------------------------------------------------
+\end{block}
+\end{column} % End of the first column
+
+\begin{column}{\sepwid}\end{column} % Empty spacer column
+
+\begin{column}{\onecolwid} % The third column
+
+\begin{block}{Data Reliability}
+
+As our application is heavily dependent on the data supplied by users, we need to ensure that the information we store in ES is reliable. To accomplish this we enforce that the user only updates parking information for streets which are within 100 meter distance from the user's location. Additionally, a user can only report brand new parking spots which are not within 50 meter distance from an existing parking. This ensures that data is not duplicated for the same parking spots. We also deduct points of users who proclaim a higher number of available spots than the total number of parking spots itself. Therefore, its crucial to maintain the total possible parking spots of streets in our ES. Another feature is to only allow users to make a maximum of five parking spot updates per day. This protects against bots who may try to score unrestrained points by continuously updating parking locations. 
+\end{block}
+
+
+\begin{block}{Incentive-based Ideology}
+
+Our application does not contain any parking data of its own. It relies on its users to report and update parking spots in real-time. Therefore, we need to create some kind of an incentive for users to feed data to the app. A point-based approach works well for us here as users require a certain minimum score to be able to find parking. If they fall short of this they must feed available parking information to the app which guarantees an everlasting cycle of information supply and retrieval between users.
+\end{block}
+
+
+%----------------------------------------------------------------------------------------
+%	CONCLUSION
+%----------------------------------------------------------------------------------------
+
+\setbeamercolor{block alerted title}{fg=black,bg=norange} % Change the alert block title colors
+\setbeamercolor{block alerted body}{fg=black,bg=white} % Change the alert block body colors
+
+\begin{alertblock}{Conclusion}
+
+Parkwizard is an android app with a mission to mitigate the inconvenience suffered while finding street parking. It employs a crowd-sourcing, score-based approach where users earn points on reporting free parking spots and use those points to find parking when required. ParkWizard utilizes various cloud services to function as a scalable, reliable and secure application.
+\end{alertblock}
+
+
+%----------------------------------------------------------------------------------------
+
+\end{column} % End of the third column
+
+\end{columns} % End of all the columns in the poster
+
+\end{frame} % End of the enclosing frame
+
+\end{document}
