@@ -27,7 +27,7 @@
 \usepackage[scale=1.2]{beamerposter} % Use the beamerposter package for laying out the poster
 
 \usetheme{confposter} % Use the confposter theme supplied with this template
-
+\usepackage{tgbonum}
 \setbeamercolor{block title}{fg=ngreen,bg=white} % Colors of the block titles
 \setbeamercolor{block body}{fg=black,bg=white} % Colors of the body of blocks
 \setbeamercolor{block alerted title}{fg=white,bg=dblue!70} % Colors of the highlighted block titles
@@ -89,8 +89,8 @@
 %	ABSTRACT
 %--------------
 \begin{alertblock}{Abstract}
-A good day begins with a good parking. Finding a parking spot rather than ending up with a ticket is one of the daily struggles faced by millions of drivers worldwide, however the problem is not lack of parking, rather most of the times drivers are simply not aware of parking spots.\par
-Various apps have been developed in the past but with an intention of providing paid garage parking. In this project, we introduce \textit{ParkWizard}, an user incentive based android app which crowdsources parking data and provides on demand search facility for hassle free parking.
+\fontsize{34}{40} \selectfont A good day begins with a good parking. Finding a parking spot rather than ending up with a ticket is one of the daily struggles faced by millions of drivers worldwide, however the problem is not lack of parking, rather most of the times drivers are simply not aware of parking spots.\par
+Various apps have been developed in the past but with an intention to provide paid garage parking. In this project, we introduce \textit{ParkWizard}, a user incentive based android app that crowdsources parking data to provide on-demand search facility for hassle free parking.
 \end{alertblock}
 
 %------------------
@@ -98,17 +98,17 @@ Various apps have been developed in the past but with an intention of providing 
 %------------------
 
 \begin{block}{Introduction}
-\textit{ParkWizard} is an Android app that helps users find available street parking locations. It works on a score based system where users earn points by reporting parking locations and updating availability status. The users further spend their earned score back into the app to search for available parking spots when needed. This score-based system works well towards maintaining a smooth information flow between users(drivers) who want to find available parking spots and those(informers) who have information about them. At any point, a user can update as well search for parking locations on the app.\par
+\fontsize{34}{40} \selectfont \textit{ParkWizard} is an Android app that helps users find available street parking locations. It works on a score based system where users earn points by reporting parking locations and updating availability status. The users further spend their earned score back into the app to search for available parking spots when needed. This score-based system works well towards maintaining a smooth information flow between users(drivers) who want to find available parking spots and those(informers) who have information about them. At any point, a user can update as well as search for parking locations on the app.\par
 \end{block}
 
 \begin{block}{User Incentive \& Protocol Design}
-\textit{Parkwizard} does not contain any parking location data of its own. It aims to incentivize users to provide the app with latest and most correct information about parking locations in their knowledge in return of earning reward points on the app. The scoring scheme is as follows:
+\fontsize{34}{40} \selectfont \textit{Parkwizard} does not contain any parking location data of its own. It aims to incentivize users to provide the app with latest and most correct information about parking locations in their knowledge in return of earning reward points on the app. The scoring scheme is as follows:
 \begin{itemize}
-    \item A user is rewarded 10 points for reporting a new parking location. However, a user is not allowed to report a parking within 50m of an already existing parking to avoid duplicates.
+\fontsize{34}{40} \selectfont \item A user is rewarded 10 points for reporting a new parking location. However, a user is not allowed to report a parking within 50m of an already existing parking to avoid duplicates.
 
-    \item A user is rewarded 2 points for every update they provide about an already existing parking location. To limit the misuse of the update feature, we limit a user to make a maximum of 5 updates per day. These updates can be made for parking locations within 100m of the user device location.
+\fontsize{34}{40} \selectfont \item A user is rewarded 2 points for every update they provide about an existing parking spot. To limit misuse of the update feature, we limit a user to make a maximum of 5 updates per day. These updates can be made for parking spots within 100m of the user device location.
 
-    \item For updating false information such as suspiciously high number of parking spots or fake information, a user is penalized 2 points.
+\fontsize{34}{40} \selectfont \item For updating false information such as suspiciously high number of parking spots or fake information, a user is penalized 2 points.
 
     % CONTINUED IN THIRD COLUMN
 \end{itemize}
@@ -142,17 +142,21 @@ Various apps have been developed in the past but with an intention of providing 
 
 \begin{column}{\onecolwid} % The third column
 
+\vspace{-2.2cm}
+\begin{block}{}
+\vspace{-1.3cm}
 \begin{itemize}
-    \item A user has to spend 5 points to search for parking locations they wish to find near their destination. By default the parking locations are shown within a 500m radius of destination.
+\fontsize{34}{40} \selectfont \item A user has to spend 5 points to search for parking locations they wish to find near their destination. By default the parking locations are shown within a 500m radius of destination.
 
-    \item To encourage users to keep the parking location data most up to date, the app rewards them back 2 points if they choose to use a parking spot from the search results and navigates them to the location via Google Maps.
+\fontsize{34}{40} \selectfont \item To encourage users to keep the parking location data most up to date, the app rewards them back 2 points if they choose to use a parking spot from the search results and navigates them to the location via Google Maps.
 \end{itemize}
+\end{block}
 
+\vspace{-1.3cm}
 \begin{block}{System Architecture \& Working}
-\textit{ParkWizard}
-The user signs up for the app using the Facebook OAuth 2.0 authentication. Further the app makes use of \textit{AWS Cognito service} to authenticate the app user for accessing the underlying AWS services associated with \textit{ParkWizard}.\par
+\fontsize{34}{40} \selectfont Users sign up using Facebook OAuth 2.0 authentication. The app uses \textit{AWS Cognito service} to authenticate the user for accessing the underlying AWS services associated with \textit{ParkWizard}.\par
 
-The server side business logic is implemented using Django 1.10.4, deployed in \textit{AWS ElasticBeanstalk} auto-scaling environment. This is further backed by an auto-scaling deployment of \textit{AWS ElasticSearch} where the user data and parking location data is indexed for fast real time searching.\par
+The server side business logic is implemented using Django 1.10.4, deployed on \textit{AWS ElasticBeanstalk} auto-scaling environment. This is backed by an auto-scaling deployment of \textit{AWS ElasticSearch} where the user and parking location data is indexed for fast real time searching.\par
 
 \textit{Parkwizard} app uses \textit{Google Maps API} to display the geographical map as the primary user interface, where the user can see parking location search results, select parking locations to update available parking spots or report new parking locations from the menu option.\par
 
@@ -168,7 +172,7 @@ The user requests for searching parking locations and signing up require fast re
 \setbeamercolor{block alerted body}{fg=black,bg=white} % Change the alert block body colors
 
 \begin{alertblock}{Conclusion}
-\textit{ParkWizard's} mission is to solve the tedious problem of daily parking as the cities grow more and more complex. The user incentive based approach for crowd sourcing latest information about parking location also ensures cheap, reliable and efficient data collection of parking locations which in turn results in most relevant search results and user activity.
+\fontsize{34}{40} \selectfont \textit{ParkWizard's} mission is to solve the tedious problem of daily parking as the cities grow more and more complex. The user incentive based approach for crowd sourcing latest information about parking location also ensures cheap, reliable and efficient data collection of parking locations which in turn results in most relevant search results and user activity.
 \end{alertblock}
 
 \end{column} % End of the third column
