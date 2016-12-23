@@ -3,10 +3,7 @@ package edu.columbia.coms6998.parkwizard;
 
 import android.app.IntentService;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -27,23 +24,28 @@ public class GcmMessageHandler extends IntentService {
         // The getMessageType() intent parameter must be the intent you received
         // in your BroadcastReceiver.
 
+        Log.d("NOTIFICATION", "Obtained");
+        Log.d("N",""+Boolean.parseBoolean(extras.getString("success")));
+        Log.d("N",extras.getString("message"));
+        /*
+
         String title = extras.getString("title");
         String type=extras.getString("type");
         String studentID = extras.getString("studentid");
         int id = Integer.parseInt(extras.getString("id"));
 
-       buildNotification(title,type,studentID,id);
+       /*buildNotification(title,type,studentID,id);
         for (String key : extras.keySet()) {
             Object value = extras.get(key);
             Log.d("NOTIFICATION", String.format("%s %s (%s)", key,
                     value.toString(), value.getClass().getName()));
-        }
+        }*/
         GcmBroadcastReceiver.completeWakefulIntent(intent);
     }
 
     public void buildNotification(String title,String type,String studentID,int id){
         
-        mNotificationManager = (NotificationManager)
+        /*mNotificationManager = (NotificationManager)
                 this.getSystemService(Context.NOTIFICATION_SERVICE);
         Intent i=new Intent(this, LoginActivity.class);
         //i.putExtra("EVENT","1");

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -11,11 +12,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -41,8 +42,6 @@ public class UpdateParkingFragment extends Fragment {
     Button updateBtn;
     Location userLocation;
     final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 201;
-    private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager mLayoutManager;
     ArrayList<Info> parkingLocationInfos = new ArrayList<>();
     boolean loaded = false;
 
@@ -181,7 +180,15 @@ public class UpdateParkingFragment extends Fragment {
                         parkingLocationInfos.add(information);
                     }
 
-                    
+                    final CustomAdapter adapter = new CustomAdapter(getActivity(), R.layout.card_parking);
+                    listView.setAdapter(adapter);
+                    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                            selectedPosition = i;
+                            adapter.notifyDataSetChanged();
+                        }
+                    });
 
                 }catch (Exception e){
                     e.printStackTrace();
@@ -190,7 +197,59 @@ public class UpdateParkingFragment extends Fragment {
         }.execute();
     }
 
+    public class CustomAdapter extends BaseAdapter {
+        // store the context (as an inflated layout)
+        private LayoutInflater inflater;
+        // store the resource (typically list_item.xml)
+        private int resource;
 
+        public CustomAdapter(Context context, int resource) {
+            this.inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            this.resource = resource;
+        }
+
+        public int getCount() {
+            return parkingLocationInfos.size();
+        }
+
+        public Object getItem(int position) {
+            return parkingLocationInfos.get(position);
+        }
+
+        public long getItemId(int position) {
+            return position;
+        }
+
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // reuse a given view, or inflate a new one from the xml
+            View view;
+
+            if (convertView == null) {
+                view = this.inflater.inflate(resource, parent, false);
+            } else {
+                view = convertView;
+            }
+
+            return this.bindData(view, position);
+        }
+
+        public View bindData(View view, int position) {
+            // make sure it's worth drawing the view
+            if (parkingLocationInfos.get(position) == null) {
+                return view;
+            }
+            Info item = parkingLocationInfos.get(position);
+            TextView tv = (TextView)view.findViewById(R.id.tv_parking);
+            tv.setText(item.name);
+            view.setClickable(false);
+            if(position == selectedPosition){
+                view.setBackgroundColor(Color.BLUE);
+            } else{
+                view.setBackgroundColor(Color.WHITE);
+            }
+
+            return view;
+        }
     }
 
 
