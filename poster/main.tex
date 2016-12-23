@@ -90,26 +90,29 @@
 %--------------
 \begin{alertblock}{Abstract}
 A good day begins with a good parking. Finding a parking spot rather than ending up with a ticket is one of the daily struggles faced by millions of drivers worldwide, however the problem is not lack of parking, rather most of the times drivers are simply not aware of parking spots.\par
-In this project, we introduce \textit{ParkWizard}, an incentive based android app which crowdsources parking data, verifies it and provides on demand search
-facility for hassle free parking.
+Various apps have been developed in the past but with an intention of providing paid garage parking. In this project, we introduce \textit{ParkWizard}, an user incentive based android app which crowdsources parking data and provides on demand search facility for hassle free parking.
 \end{alertblock}
-
-\begin{block}{Motivation}
-Finding open street parking spots in metropolitan cities such as New York has always been a distressing task. Various apps have been developed in the past but with an intention of providing paid garage parking only. \textit{ParkWizard} is aimed at collecting data of street parking spots and providing real time search results to users.
-\end{block}
 
 %------------------
 %	INTRODUCTION
 %------------------
 
 \begin{block}{Introduction}
-ParkWizard is an Android application that helps users find available street parking locations. It works on a crowd-sourced, point-based system where users earn points by reporting street parking locations and are able to use those points in order to obtain available parking spots. This point-based system works well towards maintaining a smooth information flow between users(finders) who want to find available parking spots and those(informers) who have information about them. At a point, any user can act as a finder or an informer.\par
-
-Users are authenticated using Amazon Cognito which assigns temporary security credentials for accessing our backend AWS resources. The app displays all the available parking spots which are within 500 meters radius from the location where the user wants to find parking. Users are initially granted 100 free points on creating an account with our app. Each time, users lose 5 points on searching a parking and gain 10 points on reporting available parking spots.
+\textit{ParkWizard} is an Android app that helps users find available street parking locations. It works on a score based system where users earn points by reporting parking locations and updating availability status. The users further spend their earned score back into the app to search for available parking spots when needed. This score-based system works well towards maintaining a smooth information flow between users(drivers) who want to find available parking spots and those(informers) who have information about them. At any point, a user can update as well search for parking locations on the app.\par
 \end{block}
 
-\begin{block}{Incentive-based Ideology}
-Our application does not contain any parking data of its own. It relies on its users to report and update parking spots in real-time. Therefore, we need to create some kind of an incentive for users to feed data to the app. A point-based approach works well for us here as users require a certain minimum score to be able to find parking. If they fall short of this they must feed available parking information to the app which guarantees an everlasting cycle of information supply and retrieval between users.
+\begin{block}{User Incentive \& Working}
+\textit{Parkwizard} does not contain any parking location data of its own. It aims to incentivize users to provide the app with latest and most correct information about parking locations in their knowledge in return of earning reward points on the app. The scoring scheme is as follows:
+\begin{itemize}
+    \item A user is rewarded 10 points for reporting a new parking location. However, a user is not allowed to report a parking within 50m of an already existing parking to avoid duplicates.
+
+    \item A user is rewarded 2 points for every update they provide about an already existing parking location. To limit the misuse of the update feature, we limit a user to make a maximum of 5 updates per day. These updates can be made for parking locations within 100m of the user device location.
+
+    \item For updating false information such as suspiciously high number of parking spots or fake information, a user is penalized 2 points.
+
+    % CONTINUED IN THIRD COLUMN
+\end{itemize}
+
 \end{block}
 
 \end{column} % End of the first column
@@ -139,11 +142,11 @@ Our application does not contain any parking data of its own. It relies on its u
 
 \begin{column}{\onecolwid} % The third column
 
-\begin{block}{Data Reliability}
+\begin{itemize}
+    \item A user has to spend 5 points to search for parking locations they wish to find near their destination. By default the parking locations are shown within a 500m radius of destination.
 
-As our application is heavily dependent on the data supplied by users, we need to ensure that the information we store in ES is reliable. To accomplish this we enforce that the user only updates parking information for streets which are within 100 meter distance from the user's location. Additionally, a user can only report brand new parking spots which are not within 50 meter distance from an existing parking. This ensures that data is not duplicated for the same parking spots. We also deduct points of users who proclaim a higher number of available spots than the total number of parking spots itself. Therefore, its crucial to maintain the total possible parking spots of streets in our ES. Another feature is to only allow users to make a maximum of five parking spot updates per day. This protects against bots who may try to score unrestrained points by continuously updating parking locations. 
-\end{block}
-
+    \item To encourage users to keep the parking location most up to date, the app rewards them back 2 points if they choose to use a parking spot from the search results.
+\end{itemize}
 
 \begin{block}{Architecture}
 We make use of Google OAuth to facilitate user login through Google account. At the time of login we also utilize AWS Cognito to provide users with temporary security credentials to access our app's backend resources. We have built our backend with Django webserver that communicates with Elasticsearch(ES) to store and retrieve real-time parking information. When users report parking, the information is first enqueued to SQS queue from where it is dequeued by our Django server. This ensures reliable data delivery and efficient handling of load on the server side.
